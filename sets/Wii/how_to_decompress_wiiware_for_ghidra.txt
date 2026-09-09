@@ -1,0 +1,2 @@
+https://github.com/Cuyler36/Ghidra-GameCube-Loader/issues/80#issuecomment-1938000304
+"I was running into this issue with a few WiiWare titles as well but eventually figured it out. The 00000001.app file for many games is often compressed in a way that tools like ShowMiiWads and BrawlCrate don't seem to pick up on. Fortunately you can still decompress these files with wwcxtool from wwPacker. For example .\wwcxtool.exe /u 00000001.app 00000001_decomp.app will produce a decompressed app file that Ghidra can decompile"
