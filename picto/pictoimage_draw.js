@@ -163,6 +163,11 @@ function performViewAction(param_1, param_2, param_3) {
 			lastX = x;
 			lastY = y;
 			break;
+		case "02": //Paint Bucket
+			x = parseInt(param_2, 16) + X_OFFSET;
+			y = parseInt(param_3, 16) + Y_OFFSET;
+			str = context.fillStyle.replace('#', '0x') + "FF";
+			floodFill(context, x, y, str);
 		case "03":
 			//trashcan
 			break;
@@ -538,10 +543,6 @@ const startDrawing = event => {
 	canvasDrawRect(lastX, lastY);
 	outputToArray([9, (lastX - X_OFFSET), (lastY - Y_OFFSET)]); //TODO:
 	outputToArray([DRAW_PENCIL, (lastX - X_OFFSET), (lastY - Y_OFFSET)]);
-
-
-
-
 }
 
 function getCanvasLayerData() {
