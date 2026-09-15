@@ -8,6 +8,8 @@ const CLIENT_ID = "b4fb95e0edc434c";
 const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/" + GOOGLE_SHEET_ID + "/export?format=csv";
 const GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/" + GOOGLE_FORM_ID + "/formResponse";
 
+const BYPASS_VERIFIED = false;
+
 const paintCanvas = document.querySelector('.paint-canvas');
 const context = paintCanvas.getContext('2d');
 context.lineCap = 'round';
@@ -43,7 +45,7 @@ const COLORS = ['rgb(251,251,251)', 'rgb(130,130,130)', 'rgb(195,195,195)', 'rgb
 X_OFFSET = -51;
 Y_OFFSET = -10;
 
-let scale = 1;
+let canvasScale = 1;
 
 let drawColor = 15;
 let lastColorUsed = 0;
@@ -364,11 +366,11 @@ function canvasDrawRect(x, y) {
 }
 
 function setCanvasScale(newScale) {
-	scale = newScale;
+	canvasScale = newScale;
 
-	paintCanvas.style.width = `${CANVAS_WIDTH * scale}px`;
-	paintCanvas.style.height = `${CANVAS_HEIGHT * scale}px`;
-	progressContainer.style.width = `${(CANVAS_WIDTH * scale) + 2}px`;
+	paintCanvas.style.width = `${CANVAS_WIDTH * canvasScale}px`;
+	paintCanvas.style.height = `${CANVAS_HEIGHT * canvasScale}px`;
+	progressContainer.style.width = `${(CANVAS_WIDTH * canvasScale) + 2}px`;
 }
 
 let lastX;
@@ -486,6 +488,9 @@ const stopDrawing = event => {
 
 	isDrawing = false;
 
+	if (paintCanvas.hasPointerCapture(event.pointerId)) {
+		paintCanvas.releasePointerCapture(event.pointerId);
+	}
 }
 
 function setDrawScale(i) {
@@ -516,6 +521,8 @@ const startDrawing = event => {
 		return;
 	}
 
+	paintCanvas.setPointerCapture(event.pointerId);
+
 	const rect = paintCanvas.getBoundingClientRect();
 
 	lastX = Math.floor(
@@ -526,24 +533,16 @@ const startDrawing = event => {
 		(event.clientY - rect.top) * 175 / rect.height
 	);
 
-	if (lastX < 0) {
-		lastX = 0;
-	}
-	if (lastX > 255 + X_OFFSET) {
-		lastX = 255 + X_OFFSET;
-	}
+	if (lastX < 0) lastX = 0;
+	if (lastX > 255 + X_OFFSET) lastX = 255 + X_OFFSET;
 
-	if (lastY < 0) {
-		lastY = 0;
-	}
-	if (lastY > 255 + Y_OFFSET) {
-		lastY = 255 + Y_OFFSET;
-	}
+	if (lastY < 0) lastY = 0;
+	if (lastY > 255 + Y_OFFSET) lastY = 255 + Y_OFFSET;
 
 	canvasDrawRect(lastX, lastY);
 	outputToArray([9, (lastX - X_OFFSET), (lastY - Y_OFFSET)]); //TODO:
 	outputToArray([DRAW_PENCIL, (lastX - X_OFFSET), (lastY - Y_OFFSET)]);
-}
+};
 
 function getCanvasLayerData() {
 	return context.getImageData(0, 0, paintCanvas.width, paintCanvas.height);
@@ -574,19 +573,11 @@ const draw = event => {
 		(event.clientY - rect.top) * 175 / rect.height
 	);
 
-	if (x < 0) {
-		x = 0;
-	}
-	if (x > 255 + X_OFFSET) {
-		x = 255 + X_OFFSET;
-	}
+	if (x < 0) x = 0;
+	if (x > 255 + X_OFFSET) x = 255 + X_OFFSET;
 
-	if (y < 0) {
-		y = 0;
-	}
-	if (y > 255 + Y_OFFSET) {
-		y = 255 + Y_OFFSET;
-	}
+	if (y < 0) y = 0;
+	if (y > 255 + Y_OFFSET) y = 255 + Y_OFFSET;
 
 	if (
 		event.clientX >= rect.left &&
@@ -609,13 +600,10 @@ const draw = event => {
 	lastY = y;
 }
 
-paintCanvas.addEventListener('mousedown', startDrawing);
-document.addEventListener('mousemove', draw);
-document.addEventListener('mouseup', stopDrawing);
-
-paintCanvas.addEventListener("touchstart", startDrawing);
-document.addEventListener("touchmove", draw);
-document.addEventListener("touchend", stopDrawing);
+paintCanvas.addEventListener("pointerdown", startDrawing);
+paintCanvas.addEventListener("pointermove", draw);
+paintCanvas.addEventListener("pointerup", stopDrawing);
+paintCanvas.addEventListener("pointercancel", stopDrawing);
 
 document.getElementById("save").addEventListener("click", () => {
 	const bytes = new Uint8Array(outputArray);
@@ -706,7 +694,7 @@ async function fetchImages() {
 			const is_verified_value = columns[6].trim();
 			const is_verified = is_verified_value == "TRUE";
 
-			if (is_verified) {
+			if (is_verified || BYPASS_VERIFIED) {
 				const div = document.createElement("div");
 
 				let user_field = user;
