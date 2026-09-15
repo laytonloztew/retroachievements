@@ -8,7 +8,8 @@ const CLIENT_ID = "b4fb95e0edc434c";
 const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/" + GOOGLE_SHEET_ID + "/export?format=csv";
 const GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/" + GOOGLE_FORM_ID + "/formResponse";
 
-const BYPASS_VERIFIED = false;
+const BYPASS_VERIFIED = true;
+const ALLOW_DBL_CLICK_SAVING = true;
 
 const paintCanvas = document.querySelector('.paint-canvas');
 const context = paintCanvas.getContext('2d');
@@ -33,8 +34,8 @@ const save_button = document.getElementById("save");
 const reset_button = document.getElementById("reset-button");
 const submit_button = document.getElementById("submit");
 
-const CANVAS_WIDTH = 195;
-const CANVAS_HEIGHT = 175;
+const CANVAS_WIDTH = 197;
+const CANVAS_HEIGHT = 176;
 
 const OUTPUT_MAX = 2720;
 
@@ -42,8 +43,8 @@ const COLOR_ORDER = [15, 14, 8, 12, 11, 10, 1, 2, 4, 5, 13, 9, 7, 6, 3];
 const PENCIL_ORDER = [1, 2, 3, 4];
 const COLORS = ['rgb(251,251,251)', 'rgb(130,130,130)', 'rgb(195,195,195)', 'rgb(203,81,0)', 'rgb(251,178,219)', 'rgb(203,48,211)', 'rgb(251,130,0)', 'rgb(32,227,186)', 'rgb(16,138,16)', 'rgb(48,186,243)', 'rgb(251,251,251)', 'rgb(251,251,0)', 'rgb(0,0,251)', 'rgb(0,251,0)', 'rgb(251,0,0)', 'rgb(0,0,0)'];
 
-X_OFFSET = -51;
-Y_OFFSET = -10;
+X_OFFSET = -51 + 1;
+Y_OFFSET = -10 + 1;
 
 let canvasScale = 1;
 
@@ -244,6 +245,7 @@ fileInput.onchange = function (e) {
 const zeroPad = (num, places) => String(num).padStart(places, '0')
 
 function outputToArray(arr) {
+	console.log(arr);
 	if (outputArray.length == 0) {
 		outputArray = [49, 81, 73, 80, 0, 0, 0, 0];
 		save_button.disabled = submit_button.disabled = false;
@@ -447,8 +449,6 @@ function setTool(t) {
 function resetCanvas() {
 	context.clearRect(0, 0, paintCanvas.width, paintCanvas.height);
 
-	//context.drawImage(canvas_bg, 0, 0, 197, 176);
-
 	outputArray = [];
 	isViewing = false;
 	viewingCommandCounter = 0;
@@ -526,11 +526,11 @@ const startDrawing = event => {
 	const rect = paintCanvas.getBoundingClientRect();
 
 	lastX = Math.floor(
-		(event.clientX - rect.left) * 195 / rect.width
+		(event.clientX - rect.left) * CANVAS_WIDTH / rect.width
 	);
 
 	lastY = Math.floor(
-		(event.clientY - rect.top) * 175 / rect.height
+		(event.clientY - rect.top) * CANVAS_HEIGHT / rect.height
 	);
 
 	if (lastX < 0) lastX = 0;
@@ -540,8 +540,10 @@ const startDrawing = event => {
 	if (lastY > 255 + Y_OFFSET) lastY = 255 + Y_OFFSET;
 
 	canvasDrawRect(lastX, lastY);
-	outputToArray([9, (lastX - X_OFFSET), (lastY - Y_OFFSET)]); //TODO:
-	outputToArray([DRAW_PENCIL, (lastX - X_OFFSET), (lastY - Y_OFFSET)]);
+	if (!isPaintBucket) {
+		outputToArray([9, (lastX - X_OFFSET), (lastY - Y_OFFSET)]);
+		outputToArray([DRAW_PENCIL, (lastX - X_OFFSET), (lastY - Y_OFFSET)]);
+	}
 };
 
 function getCanvasLayerData() {
@@ -566,11 +568,11 @@ const draw = event => {
 	const rect = paintCanvas.getBoundingClientRect();
 
 	x = Math.floor(
-		(event.clientX - rect.left) * 195 / rect.width
+		(event.clientX - rect.left) * CANVAS_WIDTH / rect.width
 	);
 
 	y = Math.floor(
-		(event.clientY - rect.top) * 175 / rect.height
+		(event.clientY - rect.top) * CANVAS_HEIGHT / rect.height
 	);
 
 	if (x < 0) x = 0;
@@ -605,6 +607,7 @@ paintCanvas.addEventListener("pointermove", draw);
 paintCanvas.addEventListener("pointerup", stopDrawing);
 paintCanvas.addEventListener("pointercancel", stopDrawing);
 
+// SAVE DRAWING TO PIQ
 document.getElementById("save").addEventListener("click", () => {
 	const bytes = new Uint8Array(outputArray);
 
@@ -715,7 +718,28 @@ async function fetchImages() {
 
 				cnvs.piqdata = piqdata;
 
+				const bytes = new Uint8Array(piqdata);
+
+				const blob = new Blob([bytes], {
+					type: "application/octet-stream"
+				});
+
+
+				if (ALLOW_DBL_CLICK_SAVING) {
+					cnvs.addEventListener("dblclick", () => {
+						const link = document.createElement("a");
+						link.href = URL.createObjectURL(blob);
+						link.download = "0000.PIQ";
+						link.click();
+
+						URL.revokeObjectURL(link.href);
+					});
+				}
+
+
 				cnvs.addEventListener("click", () => {
+
+
 					if (!isAnimating) {
 						isAnimating = true;
 						const cntx = cnvs.getContext("2d");
