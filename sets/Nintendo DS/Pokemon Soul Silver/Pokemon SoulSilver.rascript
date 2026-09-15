@@ -2472,7 +2472,7 @@ FLAG_MAPTEMP_001 = 0x1
     FLAG_UNK_086 = 0x86
     FLAG_UNK_087 = 0x87
     FLAG_UNK_088 = 0x88
-    FLAG_UNK_089 = 0x89
+    FLAG_GOT_BIKE = 0x89
     FLAG_GOT_RADIO_CARD = 0x8A
     FLAG_UNK_08B = 0x8B
     FLAG_UNK_08C = 0x8C
@@ -10913,7 +10913,7 @@ achs_reg = [
 ["The Fire Specialist at the Core of the Island","Defeat Blaine and earn the Volcano Badge",5,achKantoBadgeObtained(BADGE_VOLCANO)],
 ["A Full Badge Collection","Defeat Blue and earn the Earth Badge",5,achKantoBadgeObtained(BADGE_EARTH)],
 // Defeat the Elite Four in the second league and enter the Hall of Fame
-// Defeat Red on Mt. Silver
+["Fated Meeting at the Summit","Defeat Red on Mt. Silver",10,achTrainerDefeated([TRAINER_PKMN_TRAINER_RED_RED])],
 // Enter the Violet City Gym without any Pokémon above level 13 and defeat every trainer on Set mode without leaving or using Rock type Pokémon
 // Enter the Azalea Town Gym without any Pokémon above level 17 and defeat every trainer on Set mode without leaving or using Rock, Flying, or Fire type Pokémon
 // Enter the Goldenrod City Gym without any Pokémon above level 19 and defeat every trainer on Set mode without leaving or using Fighting, Rock, or Ghost type Pokémon
@@ -10981,6 +10981,7 @@ achs_reg = [
 ["The Avatar of Land","Catch Groudon in the Hidden Tower",5,achFlagAnyMap(FLAG_CAUGHT_GROUDON)],
 ["The Sweet Smell of Babies","Obtain every Incense",5,achFlagGroup(GROUP_FLAG_INCENSE)],
 // Obtain every Plate
+    //VAR_UNK_4101?
 ["Blowhard","Obtain every colored Flute",5,achFlagGroup(GROUP_FLAG_FLUTE)],
 
 ["Hometown Collector","Find every item and hidden item in New Bark Town, Route 29, Cherrygrove City, and Route 30",3,achItemsFound([
@@ -11250,15 +11251,19 @@ MAP_CERULEAN_CAVE_B1F, // Cerulean Cave / D03R0103 [ev406]
 // Take a photo in Goldenrod Tunnel while dressed in a Team Rocket uniform
 // Obtain a Silk Scarf, Choice Scarf, Muscle Band, and Focus Sash as gifts from your Mother
 // Win the Bug Catching Contest at the National Park
+    // FLAG_WON_THIS_BUG_CONTEST?
 // Catch a Pokemon in the Bug Catching Contest worth at least 350 points
 ["Arrested Development","Receive an Everstone from Professor Elm after showing him the hatched Togepi",2,achFlagAnyMap(FLAG_GOT_EVERSTONE_FROM_ELM)],
 // Receive an HP Up from Gate Keeper Randy near Goldenrod City after delivering Kenya the Spearow to Route 31
 ["Young and Still Able to Become Anything","Receive an Eevee from Bill at his house in Goldenrod City",3,achFlagAnyMap(FLAG_GOT_EEVEE_FROM_BILL)],
 // Receive Shuckie the Shuckle as a gift from a trainer in Cianwood City
+    // FLAG_GOT_LOAN_SHUCKLE / FLAG_RETURNED_OR_INHERITED_LOAN_SHUCKLE
 ["Martial Initiate","Receive a Tyrogue from the Karate King in Mt. Mortar",3,achFlagAnyMap(FLAG_GOT_TYROGUE_FROM_KARATE_KING)],
 // Receive a Dratini from the elders in the Dragon's Den
+    // FLAG_GOT_DRATINI_FROM_MASTER_JUST_NOW / FLAG_GOT_DRATINI_FROM_MASTER_LONG_AGO
 // Obtain a Bulbasaur, Charmander, or Squirtle from Professor Oak after defeating Red
-// Obtain a Treecko, Torchic, or Mudkip from Steven in Silph Co. after defeating Red
+    // (FLAG_HIDE_OAKS_LAB_CHARMANDER_BALL/etc in oak's lab?)
+["Hoenn Square One","Obtain a Treecko, Torchic, or Mudkip from Steven in Silph Co. after defeating Red",5,achFlagAnyMap(FLAG_GOT_HOENN_STARTER_FROM_STEVEN)],
 ["Trading Up in Weight","Trade a Bellsprout for an Onix in Violet City",2,achFlagAnyMap(FLAG_TRADE_VIOLET_CITY_BELLSPROUT_ONIX)],
 ["Brains for Brawns","Trade a Drowzee for a Machop in the Goldenrod Department Store",2,achFlagAnyMap(FLAG_TRADE_GOLDENROD_CITY_DROWZEE_MACHOP)],
 ["Shocking Trade","Trade a Krabby for a Voltorb in Olivine City",2,achFlagAnyMap(FLAG_TRADE_OLIVINE_CITY_KRABBY_VOLTORB)],
@@ -11273,10 +11278,12 @@ MAP_CERULEAN_CAVE_B1F, // Cerulean Cave / D03R0103 [ev406]
 // Have a Leaf Crown made by Lyra or Ethan after collecting 5 Shiny Leaves on a Pokemon
 // Obtain a Stick from a wild Farfetch'd
 // Solve all eight puzzles of the Ruins of Alph
+    // HGSS| sum 8 flags - kabuto, aero, omanyte, hooh puzzle, escape, light, water, hooh
 // Complete every page of the Unown Report
 // Receive three berries in exchange for a colored shard from the Juggler in Violet City
 // Receive a Pokeball made from Apricorns from Kurt in Azalea Town
 // Obtain all 5 items from Bill's Grandfather on Route 25 after showing him specific Pokemon
+    // VAR_UNK_412D?
 // Make a purchase at the Herb Shop in the Goldenrod Tunnel on Saturday or Sunday
 // Purchase every item from the Bargain Shop in the Goldenrod Tunnel on Monday morning
 // Have one of the Haircut Brothers give your Pokemon a haircut in the Goldenrod Tunnel
@@ -11285,13 +11292,16 @@ MAP_CERULEAN_CAVE_B1F, // Cerulean Cave / D03R0103 [ev406]
 // Win a prize at the Lottery Corner in the Goldenrod Radio Tower
 // Obtain Buena's Pokegear number after earning 30 points from her radio show
 // Learn all the trendy phrases from the old man on Route 16
+    // dynamic_region[SAVE_EASY_CHAT]
 // Win a prize by matching three of the same Pokemon on a Scratch-Off Card at the Battle Frontier
-// Heal Moomoo the Miltank at Moomoo Farm
+// REMOVE? - Heal Moomoo the Miltank at Moomoo Farm
 // Obtain GB Sounds from a Game Freak's Sound Designer in Celadon City 
+    // (inventory check)
 ["Fortune Strikes Again and Again","Obtain Lucky Punch from showing a lady on Route 14 a Chansey",3,achFlagAnyMap(FLAG_GOT_LUCKY_PUNCH_FROM_ROUTE_14_WOMAN)],
 // Wake up the Snorlax on Route 11
 // Obtain an Effort Ribbon from a man in Blackthorn City
-// Obtain TM27 Return from showing a lady in Goldenrod Department Store a high friendship Pokemon on Sunday 
+// Obtain TM27 Return from showing a lady in Goldenrod Department Store a high friendship Pokemon on Sunday
+    // (FLAG_HIDE_GOLDENROD_DEPT_STORE_5F_RETURN_FRUSTRATION_LADY)?
 ["Scary Roar","Obtain TM05 Roar from a man on Route 32",2,achFlagAnyMap(FLAG_GOT_TM05_FROM_ROUTE_32_MAN)],
 ["What Type Will It Be?","Obtain TM10 Hidden Power from a man at the Lake of Rage",2,achFlagAnyMap(FLAG_GOT_TM10_FROM_LAKE_OF_RAGE_MAN)],
 ["Sunny Weather","Obtain TM11 Sunny Day from a woman at Goldenrod Radio Tower after defeating Team Rocket",2,achFlagAnyMap(FLAG_GOT_TM11_FROM_RADIO_TOWER_WOMAN)],
@@ -11303,15 +11313,21 @@ MAP_CERULEAN_CAVE_B1F, // Cerulean Cave / D03R0103 [ev406]
 ["Sleep Tight","Obtain TM85 Dream Eater from a man in Viridian City",2,achFlagAnyMap(FLAG_GOT_TM85_FROM_VIRIDIAN_CITY_MAN)],
 ["Goodie Detector","Obtain the Dowsing MCHN in Ecruteak City",2,achFlagAnyMap(FLAG_GOT_DOWSING_MACHINE)],
 // Obtain an Exp. Share from Mr. Pokemon in exchange for the Red Scale
-// Obtain a Bicycle in Goldenrod City
+["Speed on Wheels","Obtain a Bicycle in Goldenrod City",5,achFlagAnyMap(FLAG_GOT_BIKE)],
 // Obtain a Pass to board the Magnet Train in Saffron City
 // Obtain all 3 fishing rods
+    //TODO: change, super rod checks inventory
 // Encounter a Lapras in Union Cave on Friday
+    // (FLAG_HIDE_UNION_CAVE_LAPRAS?)
 // Witness the Clefairy dance at Mt. Moon on Monday night or Tuesday morning
+    // HGSS| a flag
 // Defeat Clair and Lance in a double battle at the Dragon's Den
+    // HGSS| a flag?
 // Obtain every item from the Week Siblings
+    // HGSS| sum 6 flags
 // Defeat your rival at the Indigo Plateau on Monday or Wednesday
 // Witness Diamond Dust on Mt. Silver on a special day
+    // LocalFieldData->weather = 8
 // Have your Pay Day earnings doubled with an Amulet Coin or Luck Incense
 // Land a Pokemon while fishing with a lead Pokemon whose ability is Sticky Hold or Suction Cups
 // Interact with your starter on Victory Road
@@ -11334,6 +11350,7 @@ achs_prog = [
 
 achs_win = [
     // Defeat the Elite Four in the first league and enter the Hall of Fame
+        // HGSS| 0x001cecf4 0 -> 100, Kanto Badges < 8
 ]
 
 achs_missable = [
