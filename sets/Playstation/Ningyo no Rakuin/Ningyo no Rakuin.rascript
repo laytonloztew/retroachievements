@@ -391,6 +391,8 @@ function scenarioFlag(i) => bit(i, 0x0cba14)
 function achReijiGrave() => inBattle() && scenario() == 0x10 && has_increased(scenarioFlag(2))
 function achHowardShinra() => inBattle() && scenario() == 0x11 && has_increased(scenarioFlag(3))
 
+SCENARIO_STONE_PRECIPICE = 6
+
 ScenarioLookup = {
     0: "Escape",
     1: "Hill of Crucifixion",
@@ -584,10 +586,10 @@ achs_reg = [
 ["Howard's Emperor Fist","Find the hidden Azathoth's Fist during a second playthrough in Escape",3,achGetTreasure(8,9,0)],
 ["Takeru's Slaying Steel","Find the hidden Shoggoth Steel during a second playthrough in Hill of Crucifixion",3,achGetTreasure(12,11,1)],
 ["Keisuke's Thunderous Firearm","Find the hidden Yithian Cylinder during a second playthrough in Determination",3,achGetTreasure(2,12,2)],
-["Mizuki's Merfolk Claws","Find the hidden Merfolk Claws during a second playthrough in Stone Precipice Between Life and Death",3,achGetTreasure(7,6,5)],
-["Stacy's Lightning Staff","Find the hidden Martense Staff during a second playthrough in Stone Precipice Between Life and Death",3,achGetTreasure(6,7,5)],
-["Crow's Crescent Moon","Find the hidden Gibbous Blade during a second playthrough in Stone Precipice Between Life and Death",3,achGetTreasure(8,7,5)],
-["Kiriu's Divine Fire","Find the hidden Fthaggua's Flame during a second playthrough in Stone Precipice Between Life and Death",3,achGetTreasure(7,8,5)],
+["Mizuki's Merfolk Claws","Find the hidden Merfolk Claws during a second playthrough in Stone Precipice Between Life and Death",3,achGetTreasure(7,6,SCENARIO_STONE_PRECIPICE)],
+["Stacy's Lightning Staff","Find the hidden Martense Staff during a second playthrough in Stone Precipice Between Life and Death",3,achGetTreasure(6,7,SCENARIO_STONE_PRECIPICE)],
+["Crow's Crescent Moon","Find the hidden Gibbous Blade during a second playthrough in Stone Precipice Between Life and Death",3,achGetTreasure(8,7,SCENARIO_STONE_PRECIPICE)],
+["Kiriu's Divine Fire","Find the hidden Fthaggua's Flame during a second playthrough in Stone Precipice Between Life and Death",3,achGetTreasure(7,8,SCENARIO_STONE_PRECIPICE)],
 ]
 
 achs_missable = [
