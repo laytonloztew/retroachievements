@@ -1216,7 +1216,7 @@ TrainerLookupS = {
 }
 
 TrainerLookup = {
-    0: "---",
+    0: "Trainer",
 	1: "Rival Silver",
 	2: "Rival Silver",
 	3: "Rival Silver",
@@ -1984,10 +1984,10 @@ PKMN_PIKACHU = 24
 PKMN_RAICHU = 25
 PKMN_SANDSHREW = 26
 PKMN_SANDSLASH = 27
-PKMN_NIDORAN = 28
+PKMN_NIDORAN_1 = 28
 PKMN_NIDORINA = 29
 PKMN_NIDOQUEEN = 30
-PKMN_NIDORAN = 31
+PKMN_NIDORAN_2 = 31
 PKMN_NIDORINO = 32
 PKMN_NIDOKING = 33
 PKMN_CLEFAIRY = 34
@@ -2538,10 +2538,10 @@ PKMN_GROUP_JOHTO = [
     PKMN_DITTO,
     PKMN_PINECO,
     PKMN_FORRETRESS,
-    PKMN_NIDORAN,
+    PKMN_NIDORAN_1,
     PKMN_NIDORINA,
     PKMN_NIDOQUEEN,
-    PKMN_NIDORAN,
+    PKMN_NIDORAN_2,
     PKMN_NIDORINO,
     PKMN_NIDOKING,
     PKMN_YANMA,
@@ -2715,10 +2715,10 @@ PKMN_GROUP_NATIONAL = [
     PKMN_RAICHU,
     PKMN_SANDSHREW,
     PKMN_SANDSLASH,
-    PKMN_NIDORAN,
+    PKMN_NIDORAN_1,
     PKMN_NIDORINA,
     PKMN_NIDOQUEEN,
-    PKMN_NIDORAN,
+    PKMN_NIDORAN_2,
     PKMN_NIDORINO,
     PKMN_NIDOKING,
     PKMN_CLEFAIRY,
@@ -10089,6 +10089,70 @@ TRAINER_NONE = 0
     TRAINER_PARTNER_RIVAL_2 = 736
     TRAINER_PARTNER_RIVAL_3 = 737
 
+TRAINER_GROUP_MON = [
+    TRAINER_SCHOOL_KID_M_JACK_4,
+TRAINER_POKE_MANIAC_BRENT_4,
+TRAINER_BIKER_AIDEN_4,
+TRAINER_YOUNGSTER_JOEY_4,
+TRAINER_FIREBREATHER_WALT_4,
+TRAINER_CAMPER_TANNER_4
+]
+
+TRAINER_GROUP_TUE = [
+    TRAINER_BUG_CATCHER_ARNIE_4,
+TRAINER_PICNICKER_TIFFANY_4,
+TRAINER_GENTLEMAN_ALFRED_4,
+TRAINER_BUG_CATCHER_WADE_4,
+TRAINER_BIRD_KEEPER_GS_JOSH_4
+]
+
+TRAINER_GROUP_WED = [
+    TRAINER_FISHERMAN_RALPH_4,
+TRAINER_BUG_CATCHER_DOUG_4,
+TRAINER_SCHOOL_KID_M_ALAN_4,
+TRAINER_FISHERMAN_KYLE_4,
+TRAINER_SAILOR_HUEY_4,
+TRAINER_BIRD_KEEPER_GS_VANCE_4,
+TRAINER_SCHOOL_KID_M_TORIN_4
+]
+
+TRAINER_GROUP_THUR = [
+    TRAINER_FISHERMAN_WILTON_4,
+TRAINER_ACE_TRAINER_M_GAVEN_4,
+TRAINER_PICNICKER_LIZ_4,
+TRAINER_FISHERMAN_KYLER_4,
+TRAINER_LASS_DANA_4,
+TRAINER_TEACHER_HILLARY_4
+]
+
+TRAINER_GROUP_FRI = [
+    TRAINER_SCHOOL_KID_M_CHAD_4,
+TRAINER_BUG_CATCHER_ROB_4,
+TRAINER_HIKER_PARRY_4,
+TRAINER_YOUNG_COUPLE_TIM_AND_SUE_4,
+TRAINER_ACE_TRAINER_F_JAMIE_4,
+TRAINER_HIKER_ANTHONY_4,
+TRAINER_SCHOOL_KID_M_BILLY_4
+]
+
+TRAINER_GROUP_SAT = [
+    TRAINER_CAMPER_TODD_4,
+TRAINER_YOUNGSTER_IAN_4,
+TRAINER_HIKER_KENNY_4,
+TRAINER_PICNICKER_ERIN_4,
+TRAINER_TWINS_KAY_AND_TIA_4,
+TRAINER_BIRD_KEEPER_GS_JOSE_4,
+]
+
+TRAINER_GROUP_SUN = [
+    TRAINER_LASS_KRISE_4,
+TRAINER_ACE_TRAINER_F_REENA_4,
+TRAINER_PICNICKER_GINA_4,
+TRAINER_FISHERMAN_TULLY_4,
+TRAINER_BIKER_ERNEST_4,
+TRAINER_BIKER_REESE_4
+]
+
 WEATHER_SUNNY = 0
     WEATHER_RAIN = 1
     WEATHER_HEAVY_RAIN = 2
@@ -12974,20 +13038,26 @@ function sumTrainerGroups(groups) {
     i = 0
     for g in groups {
             for f in MAP_TRAINERS[g] {
-            i = i + trainer_flag(f)
-            
+                i = i + trainer_flag(f)
             }
             
         }
         return i
 } 
 
-function achTrainersDefeated(group) => measured(sumTrainerGroups(group) == totalTrainersGroups(group)) &&
+function achTrainersDefeatedMaps(group) => measured(sumTrainerGroups(group) == totalTrainersGroups(group)) &&
         prev(sumTrainerGroups(group)) >= totalTrainersGroups(group) - 2 &&
         prev(sumTrainerGroups(group)) < totalTrainersGroups(group) &&
         unless(save_ptr() != prev(save_ptr())) &&
         unless(dword(REGION_PTR_ADDR) != prev(dword(REGION_PTR_ADDR))) &&
         unless(!inGame())
+
+function achTrainersDefeatedGroup(group) => unless(save_ptr() != prev(save_ptr())) &&
+        unless(dword(REGION_PTR_ADDR) != prev(dword(REGION_PTR_ADDR))) &&
+        unless(!inGame()) &&
+        measured(sum_of(group, f => trainer_flag(f)) == length(group)) &&
+        prev(sum_of(group, f => trainer_flag(f))) == length(group) - 1
+
 
 function totalItemsGroups(groups) {
     i = 0
@@ -13027,7 +13097,7 @@ function achPhotoTaken(map, subject) => inGame() &&
         any_of(range(0,35), i => 
             photoMapID(i) == map &&
             photoSubjectID(i) == subject &&
-            has_changed(photoSubjectID(i))
+            __ornext(has_changed(photoMapID(i)) || has_changed(photoSubjectID(i)))
         )
          
 NUM_BAG_ITEMS        = 165
@@ -13107,11 +13177,26 @@ function achTrendyWords() => unless(!inGame()) &&
         measured(sumTrendyWords() == 32) &&
         prev(sumTrendyWords()) == 31
 
+function achPokemonCaught(id) => inGame() &&
+        save_ptr() == prev(save_ptr()) &&
+        dword(REGION_PTR_ADDR) == prev(dword(REGION_PTR_ADDR)) &&
+        has_increased(pkmnCaught(id))
+
 function achPokemonCaughtGroup(g, amt) => unless(!inGame()) &&
         unless(save_ptr() != prev(save_ptr())) &&
         unless(dword(REGION_PTR_ADDR) != prev(dword(REGION_PTR_ADDR))) &&
         measured(pkmnCaughtGroup(g) == amt) &&
         prev(pkmnCaughtGroup(g)) == amt - 1
+
+function sealAmt(i) => byte(s(0x4e30 + i))
+function hasSeal(i) => sealAmt(i) / sealAmt(i)
+function sumSeals() => sum_of(range(0,76), i => hasSeal(i))
+
+function achSeals() => unless(!inGame()) &&
+        unless(save_ptr() != prev(save_ptr())) &&
+        unless(dword(REGION_PTR_ADDR) != prev(dword(REGION_PTR_ADDR))) &&
+        measured(sumSeals() == 77) &&
+        prev(sumSeals()) == 76
 
 
 GenderLookup = {
@@ -13261,24 +13346,24 @@ achs_reg = [
 ["Dahlia's Ultimate Team","Obtain the Gold Print in the Battle Arcade",50,achGoldPrint(4) && inBattleArcade()],
 // Reach a streak of 100 wins in the Battle Tower and obtain a Trainer Card star
 // Obtain every Gym Leader's Pokegear number
-["Local Connoisseur","Catch all 221 Pokémon in the Johto Pokedex without events or external trades",0,achPokemonCaughtGroup(PKMN_GROUP_JOHTO, 221)],
-["Gotta Catch 'Em All - SoulSilver Edition","Catch all 371 Pokémon in the National Pokedex without events or external trades",0,achPokemonCaughtGroup(PKMN_GROUP_NATIONAL, 371)],
-["Hard-Headed","Catch all Pokémon that can be found by Headbutting trees",0,achPokemonCaughtGroup(PKMN_GROUP_HEADBUTT, length(PKMN_GROUP_HEADBUTT))],
-["The Sound of Wednesdays","Catch all Pokémon that can be found via Hoenn Sound",0,achPokemonCaughtGroup(PKMN_GROUP_HOENN_SOUND, length(PKMN_GROUP_HOENN_SOUND))],
-["Thursday's Funky Beats","Catch all Pokémon that can be found via Sinnoh Sound",0,achPokemonCaughtGroup(PKMN_GROUP_SINNOH_SOUND, length(PKMN_GROUP_SINNOH_SOUND))],
+["Local Connoisseur","Catch all 221 Pokémon in the Johto Pokedex without events or external trades",50,achPokemonCaughtGroup(PKMN_GROUP_JOHTO, 221)],
+["Gotta Catch 'Em All - SoulSilver Edition","Catch all 371 Pokémon in the National Pokedex without events or external trades",50,achPokemonCaughtGroup(PKMN_GROUP_NATIONAL, 371)],
+["Hard-Headed","Catch all Pokémon that can be found by Headbutting trees",5,achPokemonCaughtGroup(PKMN_GROUP_HEADBUTT, length(PKMN_GROUP_HEADBUTT))],
+["The Sound of Wednesdays","Catch all Pokémon that can be found via Hoenn Sound",5,achPokemonCaughtGroup(PKMN_GROUP_HOENN_SOUND, length(PKMN_GROUP_HOENN_SOUND))],
+["Thursday's Funky Beats","Catch all Pokémon that can be found via Sinnoh Sound",5,achPokemonCaughtGroup(PKMN_GROUP_SINNOH_SOUND, length(PKMN_GROUP_SINNOH_SOUND))],
 // Catch all Pokémon that can be found in the Safari Zone
-["Invasive Species","Catch all Pokémon that can be found in Swarms",0,achPokemonCaughtGroup(PKMN_GROUP_SWARM, length(PKMN_GROUP_SWARM))],
-["All With My Trusty Net","Catch all Pokémon that can be found during the Bug Catching Contest",0,achPokemonCaughtGroup(PKMN_GROUP_BUGCONTEST, length(PKMN_GROUP_BUGCONTEST))],
+["Invasive Species","Catch all Pokémon that can be found in Swarms",5,achPokemonCaughtGroup(PKMN_GROUP_SWARM, length(PKMN_GROUP_SWARM))],
+["All With My Trusty Net","Catch all Pokémon that can be found during the Bug Catching Contest",5,achPokemonCaughtGroup(PKMN_GROUP_BUGCONTEST, length(PKMN_GROUP_BUGCONTEST))],
 ["The Silvered Soul","Catch Lugia in the Whirl Islands",10,achFlagAnyMap(FLAG_CAUGHT_LUGIA)],
 ["The Golden Heart","Catch Ho-Oh on the Bell Tower",10,achFlagAnyMap(FLAG_CAUGHT_HO_OH)],
 ["Aurora Borealis","Catch Suicune",5,achFlagAnyMap(FLAG_CAUGHT_SUICUNE)],
-// Catch Raikou
-// Catch Entei
+["Cry Thunder","Catch Raikou",5,achPokemonCaught(PKMN_RAIKOU)],
+["The Best with a Volcanic Birth","Catch Entei",5,achPokemonCaught(PKMN_ENTEI)],
 ["Mr. Fuji's Creation","Catch Mewtwo in Cerulean Cave",5,achFlagAnyMap(FLAG_CAUGHT_MEWTWO)],
 ["Chilling Wind","Catch Articuno in the Seafoam Islands",5,achFlagAnyMap(FLAG_CAUGHT_ARTICUNO)],
 ["Directly from Thunderclouds","Catch Zapdos outside the Power Plant on Route 10",5,achFlagAnyMap(FLAG_CAUGHT_ZAPDOS)],
 ["Blazing Plumes","Catch Moltres in Silver Cave",5,achFlagAnyMap(FLAG_CAUGHT_MOLTRES)],
-// Catch Latios
+["Gentle Voyager","Catch Latios",5,achPokemonCaught(PKMN_LATIOS)],
 ["The Avatar of Land","Catch Groudon in the Hidden Tower",5,achFlagAnyMap(FLAG_CAUGHT_GROUDON)],
 ["The Sweet Smell of Babies","Obtain every Incense",5,achFlagGroup(GROUP_FLAG_INCENSE)],
 // Obtain every Plate
@@ -13496,33 +13581,33 @@ MAP_CERULEAN_CAVE_2F, // Cerulean Cave / D03R0102 [ev405]
 MAP_CERULEAN_CAVE_B1F, // Cerulean Cave / D03R0103 [ev406]
 ])],
 
-["The World Tour Begins","Defeat every unmissable trainer in Route 30, Route 31, and Sprout Tower",3,achTrainersDefeated([MAP_ROUTE_30, MAP_ROUTE_31, MAP_SPROUT_TOWER_1F, MAP_SPROUT_TOWER_2F, MAP_SPROUT_TOWER_3F, MAP_VIOLET_GYM])],
-["Rumor of a Promising Trainer","Defeat every unmissable trainer in Route 32, Route 33, Ruins of Alph, and Union Cave",3,achTrainersDefeated([MAP_ROUTE_32, MAP_ROUTE_33, MAP_RUINS_OF_ALPH, MAP_UNION_CAVE_1F, MAP_UNION_CAVE_B1F, MAP_UNION_CAVE_B2F])],
-["A Champion in the Making","Defeat every unmissable trainer in Route 34, Route 35, and the Goldenrod Tunnel",3,achTrainersDefeated([MAP_ROUTE_34, MAP_ROUTE_35, MAP_GOLDENROD_TUNNEL_B1F, MAP_GOLDENROD_TUNNEL_B2F, MAP_GOLDENROD_TUNNEL_WAREHOUSE])],
-["Will Accept Any Challenge","Defeat every unmissable trainer in National Park, Route 36, Route 37, and the Burned Tower",3,achTrainersDefeated([MAP_ROUTE_36, MAP_ROUTE_37, MAP_NATIONAL_PARK, MAP_BURNED_TOWER_1F])],
-["Spreading Your Name","Defeat every unmissable trainer in Route 38, Route 39, Olivine City, and Glitter Lighthouse",3,achTrainersDefeated([MAP_ROUTE_38, MAP_ROUTE_39, MAP_OLIVINE_POKECENTER_1F, MAP_OLIVINE_LIGHTHOUSE_2F, MAP_OLIVINE_LIGHTHOUSE_3F, MAP_OLIVINE_LIGHTHOUSE_4F, MAP_OLIVINE_LIGHTHOUSE_5F])],
-["All the Way to the West","Defeat every unmissable trainer in Route 40, Route 41, and Route 47",3,achTrainersDefeated([MAP_ROUTE_40, MAP_ROUTE_41, MAP_CIANWOOD_GYM, MAP_ROUTE_47])],
-["All the Way to the North","Defeat every unmissable trainer in Route 42, Route 43, Mt. Mortar, and the Lake of Rage",3,achTrainersDefeated([MAP_ROUTE_42, MAP_ROUTE_43, MAP_LAKE_OF_RAGE, MAP_MAHOGANY_GYM_ROOM_2, MAP_MAHOGANY_GYM_LEADER_ROOM, MAP_TEAM_ROCKET_HEADQUARTERS_B1F, MAP_TEAM_ROCKET_HEADQUARTERS_B2F, MAP_TEAM_ROCKET_HEADQUARTERS_B3F, MAP_MOUNT_MORTAR_1F_BACK, MAP_MOUNT_MORTAR_2F])],
-["All the Way to the East","Defeat every unmissable trainer in Dragon's Den, Route 44, Route 45, and Route 46",3,achTrainersDefeated([MAP_ROUTE_44, MAP_ROUTE_45, MAP_ROUTE_46, MAP_DRAGONS_DEN])],
-["Going National","Defeat every unmissable trainer in Route 27 and Route 26",3,achTrainersDefeated([MAP_ROUTE_26, MAP_ROUTE_27])],
-["On Land and on the Sea","Defeat every unmissable trainer on the S.S. Aqua",3,achTrainersDefeated([MAP_SS_AQUA_1F_SOUTHEAST_ROOMS, MAP_SS_AQUA_1F_SOUTHWEST_ROOMS, MAP_SS_AQUA_1F_NORTHEAST_ROOMS, MAP_SS_AQUA_1F_NORTHWEST_ROOMS, MAP_SS_AQUA_B1F])],
-["The Rumor Spreads in Kanto","Defeat every unmissable trainer in Route 6, Route 11, and Route 12",3,achTrainersDefeated([MAP_VERMILION_GYM, MAP_ROUTE_6, MAP_ROUTE_11, MAP_ROUTE_12])],
-["To the Northeast","Defeat every unmissable trainer in Route 8, Route 9, and Route 10",3,achTrainersDefeated([MAP_SAFFRON_GYM,  MAP_ROUTE_8, MAP_ROUTE_9, MAP_ROUTE_10_SOUTH])],
-["Northern Kanto Conquest","Defeat every unmissable trainer in Route 24, Route 25, Route 3, and Route 4",3,achTrainersDefeated([MAP_CERULEAN_GYM, MAP_ROUTE_25, MAP_ROUTE_3, MAP_ROUTE_4])],
-["And Down the Pump Tracks","Defeat every unmissable trainer in Route 17, and Route 18",3,achTrainersDefeated([MAP_CELADON_GYM, MAP_ROUTE_17, MAP_ROUTE_18])],
-["To the Southeast","Defeat every unmissable trainer in Route 13, Route 14, Route 15",3,achTrainersDefeated([MAP_ROUTE_13, MAP_ROUTE_14, MAP_ROUTE_15])],
-["Around the Hometown of the Past Legend","Defeat every unmissable trainer in Route 1, Route 2, and Viridian Forest",3,achTrainersDefeated([MAP_ROUTE_1, MAP_ROUTE_2, MAP_ROUTE_2_EAST, MAP_PEWTER_GYM, MAP_VIRIDIAN_GYM, MAP_VIRIDIAN_FOREST])],
-["And to Every Single Island!","Defeat every unmissable trainer in Route 19, Route 20, Route 21, and the Seafoam Islands",3,achTrainersDefeated([MAP_ROUTE_19, MAP_ROUTE_20, MAP_ROUTE_21, MAP_SEAFOAM_ISLANDS_B2F])],
-// Defeat Ace Trainer Cal at the Trainer House
-// Defeat every rematchable trainer's final team who are present on Sunday
-// Defeat every rematchable trainer's final team who are present on Monday
-// Defeat every rematchable trainer's final team who are present on Tuesday
-// Defeat every rematchable trainer's final team who are present on Wednesday
-// Defeat every rematchable trainer's final team who are present on Thursday
-// Defeat every rematchable trainer's final team who are present on Friday
-// Defeat every rematchable trainer's final team who are present on Saturday
+["The World Tour Begins","Defeat every unmissable trainer in Route 30, Route 31, and Sprout Tower",3,achTrainersDefeatedMaps([MAP_ROUTE_30, MAP_ROUTE_31, MAP_SPROUT_TOWER_1F, MAP_SPROUT_TOWER_2F, MAP_SPROUT_TOWER_3F, MAP_VIOLET_GYM])],
+["Rumor of a Promising Trainer","Defeat every unmissable trainer in Route 32, Route 33, Ruins of Alph, and Union Cave",3,achTrainersDefeatedMaps([MAP_ROUTE_32, MAP_ROUTE_33, MAP_RUINS_OF_ALPH, MAP_UNION_CAVE_1F, MAP_UNION_CAVE_B1F, MAP_UNION_CAVE_B2F])],
+["A Champion in the Making","Defeat every unmissable trainer in Route 34, Route 35, and the Goldenrod Tunnel",3,achTrainersDefeatedMaps([MAP_ROUTE_34, MAP_ROUTE_35, MAP_GOLDENROD_TUNNEL_B1F, MAP_GOLDENROD_TUNNEL_B2F, MAP_GOLDENROD_TUNNEL_WAREHOUSE])],
+["Will Accept Any Challenge","Defeat every unmissable trainer in National Park, Route 36, Route 37, and the Burned Tower",3,achTrainersDefeatedMaps([MAP_ROUTE_36, MAP_ROUTE_37, MAP_NATIONAL_PARK, MAP_BURNED_TOWER_1F])],
+["Spreading Your Name","Defeat every unmissable trainer in Route 38, Route 39, Olivine City, and Glitter Lighthouse",3,achTrainersDefeatedMaps([MAP_ROUTE_38, MAP_ROUTE_39, MAP_OLIVINE_POKECENTER_1F, MAP_OLIVINE_LIGHTHOUSE_2F, MAP_OLIVINE_LIGHTHOUSE_3F, MAP_OLIVINE_LIGHTHOUSE_4F, MAP_OLIVINE_LIGHTHOUSE_5F])],
+["All the Way to the West","Defeat every unmissable trainer in Route 40, Route 41, and Route 47",3,achTrainersDefeatedMaps([MAP_ROUTE_40, MAP_ROUTE_41, MAP_CIANWOOD_GYM, MAP_ROUTE_47])],
+["All the Way to the North","Defeat every unmissable trainer in Route 42, Route 43, Mt. Mortar, and the Lake of Rage",3,achTrainersDefeatedMaps([MAP_ROUTE_42, MAP_ROUTE_43, MAP_LAKE_OF_RAGE, MAP_MAHOGANY_GYM_ROOM_2, MAP_MAHOGANY_GYM_LEADER_ROOM, MAP_TEAM_ROCKET_HEADQUARTERS_B1F, MAP_TEAM_ROCKET_HEADQUARTERS_B2F, MAP_TEAM_ROCKET_HEADQUARTERS_B3F, MAP_MOUNT_MORTAR_1F_BACK, MAP_MOUNT_MORTAR_2F])],
+["All the Way to the East","Defeat every unmissable trainer in Dragon's Den, Route 44, Route 45, and Route 46",3,achTrainersDefeatedMaps([MAP_ROUTE_44, MAP_ROUTE_45, MAP_ROUTE_46, MAP_DRAGONS_DEN])],
+["Going National","Defeat every unmissable trainer in Route 27 and Route 26",3,achTrainersDefeatedMaps([MAP_ROUTE_26, MAP_ROUTE_27])],
+["On Land and on the Sea","Defeat every unmissable trainer on the S.S. Aqua",3,achTrainersDefeatedMaps([MAP_SS_AQUA_1F_SOUTHEAST_ROOMS, MAP_SS_AQUA_1F_SOUTHWEST_ROOMS, MAP_SS_AQUA_1F_NORTHEAST_ROOMS, MAP_SS_AQUA_1F_NORTHWEST_ROOMS, MAP_SS_AQUA_B1F])],
+["The Rumor Spreads in Kanto","Defeat every unmissable trainer in Route 6, Route 11, and Route 12",3,achTrainersDefeatedMaps([MAP_VERMILION_GYM, MAP_ROUTE_6, MAP_ROUTE_11, MAP_ROUTE_12])],
+["To the Northeast","Defeat every unmissable trainer in Route 8, Route 9, and Route 10",3,achTrainersDefeatedMaps([MAP_SAFFRON_GYM,  MAP_ROUTE_8, MAP_ROUTE_9, MAP_ROUTE_10_SOUTH])],
+["Northern Kanto Conquest","Defeat every unmissable trainer in Route 24, Route 25, Route 3, and Route 4",3,achTrainersDefeatedMaps([MAP_CERULEAN_GYM, MAP_ROUTE_25, MAP_ROUTE_3, MAP_ROUTE_4])],
+["And Down the Pump Tracks","Defeat every unmissable trainer in Route 17, and Route 18",3,achTrainersDefeatedMaps([MAP_CELADON_GYM, MAP_ROUTE_17, MAP_ROUTE_18])],
+["To the Southeast","Defeat every unmissable trainer in Route 13, Route 14, Route 15",3,achTrainersDefeatedMaps([MAP_ROUTE_13, MAP_ROUTE_14, MAP_ROUTE_15])],
+["Around the Hometown of the Past Legend","Defeat every unmissable trainer in Route 1, Route 2, and Viridian Forest",3,achTrainersDefeatedMaps([MAP_ROUTE_1, MAP_ROUTE_2, MAP_ROUTE_2_EAST, MAP_PEWTER_GYM, MAP_VIRIDIAN_GYM, MAP_VIRIDIAN_FOREST])],
+["And to Every Single Island!","Defeat every unmissable trainer in Route 19, Route 20, Route 21, and the Seafoam Islands",3,achTrainersDefeatedMaps([MAP_ROUTE_19, MAP_ROUTE_20, MAP_ROUTE_21, MAP_SEAFOAM_ISLANDS_B2F])],
+["Taming Torrents, Flames, and Outgrowths in One Fell Swoop","Defeat Ace Trainer Cal at the Trainer House",3,achTrainerDefeated([0]) && currMapID() == MAP_VIRIDIAN_TRAINER_HOUSE_B1F],
+["Training on the Weekend","Defeat every rematchable trainer's final team who are present on Sunday",5,achTrainersDefeatedGroup(TRAINER_GROUP_SUN)],
+["Funday Monday","Defeat every rematchable trainer's final team who are present on Monday",5,achTrainersDefeatedGroup(TRAINER_GROUP_MON)],
+["Title Tuesday","Defeat every rematchable trainer's final team who are present on Tuesday",5,achTrainersDefeatedGroup(TRAINER_GROUP_TUE)],
+["Midweek Travels","Defeat every rematchable trainer's final team who are present on Wednesday",5,achTrainersDefeatedGroup(TRAINER_GROUP_WED)],
+["Six Magikarps and Still No Dragons","Defeat every rematchable trainer's final team who are present on Thursday",5,achTrainersDefeatedGroup(TRAINER_GROUP_THUR)],
+["Gotta Get Down on Friday","Defeat every rematchable trainer's final team who are present on Friday",5,achTrainersDefeatedGroup(TRAINER_GROUP_FRI)],
+["Saturday Night Live","Defeat every rematchable trainer's final team who are present on Saturday",5,achTrainersDefeatedGroup(TRAINER_GROUP_SAT)],
 // Obtain at least one of every accessory and backdrop for the Fashion Case
-// Collect all 77 obtainable Seals in the Seal Case at once
+["Endless Customization","Collect all 77 obtainable Seals in the Seal Case at once",25,achSeals()],
 // Collect all 43 available regular Berries in the Berry Pocket at once
 ["Day Off","Take a photo with the Day-Care Man on Route 34 on Wednesday or Thursday",3,achPhotoTaken(MAP_ROUTE_34, SPRITE_GSOLDMAN1)],
 ["Meeting the Elder in his Favored Terrain","Take a photo with the Dragon Master in the Dragon's Den Shrine on Monday or Thursday",3,achPhotoTaken(MAP_DRAGONS_DEN_SHRINE, SPRITE_CHOUROU)],
@@ -13574,23 +13659,43 @@ MAP_CERULEAN_CAVE_B1F, // Cerulean Cave / D03R0103 [ev406]
 // Obtain a Stick from a wild Farfetch'd
 // Solve all eight puzzles of the Ruins of Alph
     // HGSS| sum 8 flags - kabuto, aero, omanyte, hooh puzzle, escape, light, water, hooh
+    /* 
+    VAR_UNK_40DD	(bit0)
+    VAR_UNK_40DE	(bit0)
+    VAR_UNK_40DF	(bit0)
+    VAR_UNK_40E0	(bit0)
+    FLAG_UNK_219	(bit0)
+    FLAG_OPENED_ALPH_ESCAPE_ROPE_SECRET_ROOM
+    FLAG_OPENED_ALPH_FLASH_SECRET_ROOM
+    FLAG_OPENED_ALPH_HO_OH_SECRET_ROOM
+    */
 // Complete every page of the Unown Report
 // Receive three berries in exchange for a colored shard from the Juggler in Violet City
 // Receive a Pokeball made from Apricorns from Kurt in Azalea Town
 // Obtain all 5 items from Bill's Grandfather on Route 25 after showing him specific Pokémon
     // VAR_UNK_412D?
 // Make a purchase at the Herb Shop in the Goldenrod Tunnel on Saturday or Sunday
+    /* Money decrease while in map and position check */
 // Purchase every item from the Bargain Shop in the Goldenrod Tunnel on Monday morning
+    /* 
+        Map check +
+
+        VAR_TEMP_x4003
+        VAR_TEMP_x4004
+        VAR_TEMP_x4005
+        VAR_TEMP_x4006
+        VAR_TEMP_x4007
+    */
 ["Fresh Look","Have one of the Haircut Brothers give your Pokémon a haircut in the Goldenrod Tunnel",2,achFlagInMap(FLAG_DAILY_GOT_HAIRCUT,MAP_GOLDENROD_TUNNEL_B1F)],
 // Obtain an Ether after showing the Fishing Guru a large Magikarp at the Lake of Rage
     // HGSS| a var?
 ["After School Makeover","Have Daisy groom one of your Pokémon at the Rival's house in Pallet Town between 3:00-3:59PM",2,achFlagInMap(FLAG_DAISY_MASSAGE, MAP_PALLET_TOWN_BLUES_HOUSE_1F)],
 // Win a prize at the Lottery Corner in the Goldenrod Radio Tower
 // Obtain Buena's Pokegear number after earning 30 points from her radio show
-["_trendy","Learn all the trendy phrases from the old man on Route 16",5,achTrendyWords()],
+["You Fight Like a Dairy Farmer","Learn all the trendy phrases from the old man on Route 16",5,achTrendyWords()],
 // Win a prize by matching three of the same Pokémon on a Scratch-Off Card at the Battle Frontier
 // REMOVE? - Heal Moomoo the Miltank at Moomoo Farm
-["Knocking on the Fourth Wall","Obtain GB Sounds from a Game Freak's Sound Designer in Celadon City",0,achGetKeyItem(0x1f6)],
+["Knocking on the Fourth Wall","Obtain GB Sounds from a Game Freak's Sound Designer in Celadon City",2,achGetKeyItem(0x1f6)],
     // TODO: add map id check
 ["Fortune Strikes Again and Again","Obtain Lucky Punch from showing a lady on Route 14 a Chansey",3,achFlagAnyMap(FLAG_GOT_LUCKY_PUNCH_FROM_ROUTE_14_WOMAN)],
 // Wake up the Snorlax on Route 11
@@ -13616,7 +13721,7 @@ MAP_CERULEAN_CAVE_B1F, // Cerulean Cave / D03R0103 [ev406]
     // HGSS| a var?
 // Defeat Clair and Lance in a double battle at the Dragon's Den
     // HGSS| a flag?
-["Right Place, Right Time","Obtain every item from the Week Siblings",0,achFlagGroup(GROUP_FLAG_WEEKSIBLINGS)],
+["Right Place, Right Time","Obtain every item from the Week Siblings",5,achFlagGroup(GROUP_FLAG_WEEKSIBLINGS)],
 // Defeat your rival at the Indigo Plateau on Monday or Wednesday
 // Witness Diamond Dust on Mt. Silver on a special day
     // LocalFieldData->weather = 8
