@@ -25,6 +25,8 @@ SCREEN_LEVELCLEAR = 0x10
 SCREEN_STAGESELECT = 0x11
 SCREEN_DEMO = 0x12
 SCREEN_WORLDSELECT = 0x14
+SCREEN_HELP1 = 0x15
+SCREEN_HELP2 = 0x16
 SCREEN_VIEWINGHINT = 0x17
 SCREEN_HELPTUTORIAL = 0x18
 SCREEN_OPENING = 0x19
@@ -123,7 +125,13 @@ COLOR_ORANGE = 2
 
 function levelChallengeLogic(w,s) => startLevelCheckpoint(w,s) &&
         trigger_when(current_screen() == SCREEN_LEVELCLEAR) &&
-        never(current_screen() != SCREEN_LEVEL && current_screen() != SCREEN_LEVELCLEAR && current_screen() != SCREEN_PAUSED && current_screen() != SCREEN_VIEWINGHINT)
+        never(current_screen() != SCREEN_LEVEL && 
+              current_screen() != SCREEN_LEVELCLEAR && 
+              current_screen() != SCREEN_PAUSED && 
+              current_screen() != SCREEN_VIEWINGHINT && 
+              current_screen() != SCREEN_HELP1 && 
+              current_screen() != SCREEN_HELP2
+        )
 
 function achChallengeLevelSwitchOnlyColor(w,s,c) => levelChallengeLogic(w,s) &&
         never(bit(4+c, switch_state_addr) == 0)
@@ -167,7 +175,7 @@ rich_presence_conditional_display(current_screen() == SCREEN_STAGESELECT,"Stage 
 rich_presence_conditional_display(current_screen() == SCREEN_WORLD_CLEAR_1,"Stage Clear [{0}/100 Stages Cleared]",rp_numlevels)
 rich_presence_conditional_display(current_screen() == SCREEN_WORLD_CLEAR_2,"Stage Clear [{0}/100 Stages Cleared]",rp_numlevels)
 rich_presence_conditional_display(current_screen() == SCREEN_COMPLETIONRANK,"Viewing Completion Ranking [{0}/100 Stages Cleared]",rp_numlevels)
-rich_presence_conditional_display(inLevel() || current_screen() == SCREEN_PAUSED || current_screen() == SCREEN_VIEWINGHINT,"Level {0}-{1} ⏰{2} [{3}/100 Stages Cleared]",
+rich_presence_conditional_display(inLevel() || current_screen() == SCREEN_PAUSED || current_screen() == SCREEN_VIEWINGHINT || current_screen() == SCREEN_HELP1  || current_screen() == SCREEN_HELP2,"Level {0}-{1} ⏰{2} [{3}/100 Stages Cleared]",
     rich_presence_value("Number",current_world()),
     rich_presence_value("Number",current_stage()),
     rich_presence_value("Time", currentlevelTime(), "MILLISECS"),
