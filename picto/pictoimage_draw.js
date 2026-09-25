@@ -430,8 +430,16 @@ reset_button.addEventListener("click", function (e) { //e => event
 function setTool(t) {
 	if (t == 0) {
 		isPaintBucket = false;
+		for (let item of pencil_pickers) {
+			item.disabled = false;
+			item.style = "opacity:1.0;";
+		}
 	} else {
 		isPaintBucket = true;
+		for (let item of pencil_pickers) {
+			item.disabled = true;
+			item.style = "opacity:0.5;";
+		}
 	}
 
 	j = 0;
