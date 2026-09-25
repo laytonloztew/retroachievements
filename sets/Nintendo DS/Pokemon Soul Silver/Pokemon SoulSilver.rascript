@@ -89,9 +89,10 @@ OV_CAPSULES = 57
 OV_APRICORNBOX = 58
 OV_INTRO_TITLE = 60
 OV_CHOOSE_STARTER = 61
-OV_HALLOFFAME = 64
+OV_HALLOFFAME = 63
 OV_MAINMENU = 74
 OV_WIIMESSAGE = 75
+OV_CREDITS = 76
 OV_POKEGEAR = 100
 OV_MAP = 101 //FLY
 OV_MAILBOX = 103
@@ -118,12 +119,19 @@ function achVarChange(v,f,t) => inGame() && var(v) == t && prev(var(v)) == f
 function achJohtoBadgeObtained(i) => inGame() && has_increased(johtoBadgeObtained(i))
 function achKantoBadgeObtained(i) => inGame() && has_increased(kantoBadgeObtained(i))
 
+HEAP_ID_FIELD1 = 4
+HEAP_ID_BATTLE = 5
+HEAP_ID_FIELD2 = 11
+HEAP_ID_PARTY_MENU = 12
+HEAP_ID_CERTIFICATES = 82
+HEAP_ID_VOLTORB = 160
+
 function heapIndex(heap_id) => ptr(dword(r(0xbfd34)),[heap_id],byte)
 function heapStartAddr() => ptr(dword(r(0xbfd24)),[0x00],acc_addr)
 function heap(heap_id) => ptr(dword(heapStartAddr() + (heapIndex(heap_id) * 4)),[0x18,0x00],acc_addr)
 
-function battleTrainer() => word(heap(5) + 0xc2)
-function battleContextPtr() => dword(heap(5) + 0x50)
+function battleTrainer() => word(heap(HEAP_ID_BATTLE) + 0xc2)
+function battleContextPtr() => dword(heap(HEAP_ID_BATTLE) + 0x50)
 
 BATTLE_IN_PROGRESS = 0
 BATTLE_RESULT_WIN = 1
@@ -132,7 +140,7 @@ BATTLE_RESULT_DRAW = 3
 BATTLE_RESULT_CAPTURED_MON = 4
 BATTLE_RESULT_PLAYER_FLED = 5
 BATTLE_RESULT_ENEMY_FLED = 6
-function battleOutcome() => byte(heap(5) + 0x2440)
+function battleOutcome() => byte(heap(HEAP_ID_BATTLE) + 0x2440)
 function battleWon() => battleOutcome() == BATTLE_RESULT_WIN && prev(battleOutcome()) == BATTLE_IN_PROGRESS
 function battleCaught() => battleOutcome() == BATTLE_RESULT_CAPTURED_MON && prev(battleOutcome()) == BATTLE_IN_PROGRESS
 
@@ -141,6 +149,8 @@ function isTrainerBattle() => bit(0,battleTypeAddr()) == 1
 function isDoubleBattle() => bit(1,battleTypeAddr()) == 1
 
 function totalTurns() => ptr(battleContextPtr(), [0x150],dword)
+function paydayCount() => ptr(battleContextPtr(), [0x14c],dword)
+function prizeMoneyValue() => ptr(battleContextPtr(), [0x2168],dword)
 function battleMonAddr(i) => ptr(battleContextPtr(), [0x2d40 + (i * 0xc0)],acc_addr)
 function battleMonSpecies(i) => word(battleMonAddr(i) + 0x00)
 function battleMonLevel(i) => byte(battleMonAddr(i) + 0x34)
@@ -149,6 +159,23 @@ function battleMonGender(i) => low4(battleMonAddr(i) + 0x7e)
 function achTrainerDefeated(trainer_ids) => inBattle() && isTrainerBattle() && battleWon() && any_of(trainer_ids, t => 
             battleTrainer() == t
         )
+
+function achPayDayAmulet() => inBattle() && has_increased(paydayCount()) && prizeMoneyValue() == 2
+
+function achMagikarpRecord() => inGame() && 
+            currMapID() == MAP_LAKE_OF_RAGE_FISHING_GURU_HOUSE &&
+            var(VAR_MAGIKARP_SIZE_RECORD) > 56150 && 
+            prev(var(VAR_MAGIKARP_SIZE_RECORD)) == 56150
+            
+
+function achShinyLeafCrown() => unless(!inGame()) && 
+        dword(heap(HEAP_ID_CERTIFICATES) + 0x20) == HEAP_ID_CERTIFICATES && 
+        dword(heap(HEAP_ID_CERTIFICATES) + 0x24) == 2 && 
+        word(heap(HEAP_ID_CERTIFICATES) + 0x62) == 0x3c && 
+        prev(word(heap(HEAP_ID_CERTIFICATES) + 0x62)) < 0x3c &&
+        once(has_increased(flag(FLAG_SHINY_CROWN))) &&
+        unless(currMapID() != MAP_NEW_BARK_RIVAL_HOUSE_2F)
+
 
 function ach(ach, t) {
     achievement(
@@ -4049,7 +4076,7 @@ FLAG_MAPTEMP_001 = 0x1
     FLAG_GOT_TM34_FROM_LT_SURGE = 0x181
     FLAG_GOT_TM48_FROM_SABRINA = 0x182
     FLAG_UNK_183 = 0x183
-    FLAG_UNK_184 = 0x184
+    FLAG_SHINY_CROWN = 0x184
     FLAG_GOT_HM08 = 0x185
     FLAG_UNK_186 = 0x186
     FLAG_UNK_187 = 0x187
@@ -13198,6 +13225,69 @@ function achSeals() => unless(!inGame()) &&
         measured(sumSeals() == 77) &&
         prev(sumSeals()) == 76
 
+bugContestPtrAddr = ptr(REGION_PTR_ADDR,[0x00,0xc28f8,0x118],acc_addr)
+
+function bugContestScore(i) => ptr(bugContestPtrAddr,[0x00,0x72 + (0x0c * i)],word)
+
+function achWonBugContest() => bugContestDone() && 
+        flag(FLAG_WON_THIS_BUG_CONTEST) == 1
+
+function cameraTargetX() => ptr(REGION_PTR_ADDR,[0x00,0xc28f8,0x24,0x54,0x00],dword)
+
+function bugContestDone() => currentOverlayID(0) == OV_FIELD &&
+        currMapID() == MAP_NATIONAL_PARK && 
+        flag(FLAG_BUG_CONTEST_ACTIVE) == 1 && 
+        dword(bugContestPtrAddr) != 0 &&
+        ptr(REGION_PTR_ADDR,[0x00,0xc28f8],dword) != 0 &&
+        ptr(REGION_PTR_ADDR,[0x00,0xc28f8,0x24],dword) != 0 &&
+        ptr(REGION_PTR_ADDR,[0x00,0xc28f8,0x24,0x54],dword) != 0 &&
+        cameraTargetX() >= 0x2e8000 &&
+        cameraTargetX() < 0x338000 &&
+        prev(cameraTargetX()) == 0x338000
+
+function bugContestSubmit() => inGame() && 
+        currentOverlayID(0) == OV_FIELD &&
+        currMapID() == MAP_NATIONAL_PARK && 
+        flag(FLAG_BUG_CONTEST_ACTIVE) == 1 && 
+        dword(bugContestPtrAddr) != 0 &&
+        bugContestScore(5) > 0 &&
+        prev(bugContestScore(5)) == 0
+
+function achBugContestScore(sc) => bugContestDone() &&
+        bugContestScore(5) >= sc
+
+function achLoanSpearowReward() => inGame() &&
+        currMapID() == MAP_ROUTE_35_GOLDENROD_GATEHOUSE &&
+        var(VAR_LOAN_SPEAROW) == 5 &&
+        prev(var(VAR_LOAN_SPEAROW)) < 5
+
+function achEffortRibbion() => inGame() &&
+        currMapID() == MAP_BLACKTHORN_EAST_HOUSE &&
+        has_changed(word(s(0xae))) &&
+        ptr(REGION_PTR_ADDR,[0x00,0xc28f8],dword) != 0 &&
+        ptr(REGION_PTR_ADDR,[0x00,0xc28f8,0x10],dword) != 0 &&
+        ptr(REGION_PTR_ADDR,[0x00,0xc28f8,0x10,0x0c],dword) != 0 &&
+        ptr(REGION_PTR_ADDR,[0x00,0xc28f8,0x10,0x0c,0x0a],word) == 2
+
+function voltorbPtr() => dword(heap(HEAP_ID_VOLTORB) + 0x26c)
+
+function inVoltorbMinigame() => currMapID() == MAP_GOLDENROD_GAME_CORNER &&
+        heapIndex(HEAP_ID_VOLTORB) != 0 && 
+        heapIndex(HEAP_ID_VOLTORB) != 0xff
+
+ROUND_OUTCOME_NONE = 0 
+ROUND_OUTCOME_QUIT = 1
+ROUND_OUTCOME_WON = 2
+ROUND_OUTCOME_LOST = 3
+function voltorbOutcome() => ptr(voltorbPtr(),[0x140],dword)
+function voltorbLevel() => 8 - ptr(voltorbPtr(),[0x14e],byte)
+
+function achVoltorbLevelBeat(level) => inGame() && 
+        inVoltorbMinigame() && 
+        dword(heap(HEAP_ID_VOLTORB) + 0x20) == HEAP_ID_VOLTORB &&
+        voltorbLevel() == level &&
+        voltorbOutcome() == ROUND_OUTCOME_WON && 
+        prev(voltorbOutcome()) == ROUND_OUTCOME_NONE
 
 GenderLookup = {
     0: "♂",
@@ -13218,6 +13308,8 @@ rp_pkmn_seen_total = rich_presence_value("PkmnSeen", sumPkmnSeen())
 
 rich_presence_conditional_display(isActiveOverlay(0) && currentOverlayID(0) == OV_INTRO_TITLE,"Viewing Title Screen")
 rich_presence_conditional_display(isActiveOverlay(0) && currentOverlayID(0) == OV_MAINMENU,"Viewing Main Menu")
+rich_presence_conditional_display(isActiveOverlay(0) && currentOverlayID(0) == OV_HALLOFFAME,"Viewing Hall of Fame")
+rich_presence_conditional_display(isActiveOverlay(0) && currentOverlayID(0) == OV_CREDITS,"Viewing Credits")
 rich_presence_conditional_display(inGame() && isActiveOverlay(0) && currentOverlayID(0) == OV_OAKSSPEECH,"New Game")
 rich_presence_conditional_display(inGame() && isActiveOverlay(0) && currentOverlayID(0) == OV_WIIMESSAGE,"Viewing Wii Message")
 rich_presence_conditional_display(inGame() && isActiveOverlay(0) && currentOverlayID(0) == OV_WIFISETTINGS,"Viewing Wifi Settings")
@@ -13302,7 +13394,6 @@ rich_presence_conditional_display(inGame() && currentOverlayID(0) == OV_PC_BOX,"
 rich_presence_conditional_display(inGame() && currentOverlayID(0) == OV_CAPSULES,"Viewing Capsules")
 rich_presence_conditional_display(inGame() && currentOverlayID(0) == OV_MAILBOX,"Viewing Mailbox")
 rich_presence_conditional_display(inGame() && currentOverlayID(0) == OV_PHOTOALBUM,"Viewing Photo Album")
-rich_presence_conditional_display(inGame() && currentOverlayID(0) == OV_HALLOFFAME,"Viewing Hall of Fame")
 rich_presence_conditional_display(inGame() && currentOverlayID(0) == OV_POKEGEAR,"Viewing Pokegear")
 rich_presence_conditional_display(inGame() && currentOverlayID(0) == OV_MAP,"Viewing Map")
 rich_presence_conditional_display(inGame() && currentOverlayID(0) == OV_SAFARICUSTOMIZER,"Viewing Safari Customizer")
@@ -13322,7 +13413,7 @@ achs_reg = [
     //["test_trainer2","",0,heapIndex(5) == 0x6],
     //["test_trainer3","",0,dword(heap(5)) == 0x6],
     //["test_battlemon_species","",0,battleMonSpecies(0) == 0x6],
-    ["test","",0,byte(heap(11) + 0x00) == 1],
+    ["test","",0,currentOverlayID(0) == OV_BATTLE],
 
 ["Rock Smash","Defeat Brock and earn the Boulder Badge",5,achKantoBadgeObtained(BADGE_BOULDER)],
 ["Fishing Trip","Defeat Misty and earn the Cascade Badge",5,achKantoBadgeObtained(BADGE_CASCADE)],
@@ -13630,14 +13721,12 @@ MAP_CERULEAN_CAVE_B1F, // Cerulean Cave / D03R0103 [ev406]
 ["Selfie with the Legendary Professor","Take a photo with Professor Oak in Professor Oak's Lab",3,achPhotoTaken(MAP_PALLET_TOWN_OAKS_LAB, SPRITE_OOKIDO)],
 ["Undercover","Take a photo in Goldenrod Tunnel while dressed in a Team Rocket uniform",3,achPhotoTaken(MAP_GOLDENROD_TUNNEL_B1F, 0)],
 // Obtain a Silk Scarf, Choice Scarf, Muscle Band, and Focus Sash as gifts from your Mother
-// Win the Bug Catching Contest at the National Park
-    // FLAG_WON_THIS_BUG_CONTEST?
-// Catch a Pokémon in the Bug Catching Contest worth at least 350 points
+["And That's Number One!","Win the Bug Catching Contest at the National Park",3,achWonBugContest()],
+["Only the Best","Catch a Pokémon in the Bug Catching Contest worth at least 350 points",5,achBugContestScore(350)],
 ["Arrested Development","Receive an Everstone from Professor Elm after showing him the hatched Togepi",2,achFlagAnyMap(FLAG_GOT_EVERSTONE_FROM_ELM)],
-// Receive an HP Up from Gate Keeper Randy near Goldenrod City after delivering Kenya the Spearow to Route 31
+["Here's to a Job Well Done","Receive an HP Up from Gate Keeper Randy near Goldenrod City after delivering Kenya the Spearow to Route 31",3,achLoanSpearowReward()],
 ["Young and Still Able to Become Anything","Receive an Eevee from Bill at his house in Goldenrod City",3,achFlagAnyMap(FLAG_GOT_EEVEE_FROM_BILL)],
-// Receive Shuckie the Shuckle as a gift from a trainer in Cianwood City
-    // FLAG_GOT_LOAN_SHUCKLE / FLAG_RETURNED_OR_INHERITED_LOAN_SHUCKLE
+["The Hardest Rock Around","Receive Shuckie the Shuckle as a gift from a trainer in Cianwood City",2,achFlagInMap(FLAG_GOT_LOAN_SHUCKLE, MAP_CIANWOOD_KIRKS_HOUSE)],
 ["Martial Initiate","Receive a Tyrogue from the Karate King in Mt. Mortar",3,achFlagAnyMap(FLAG_GOT_TYROGUE_FROM_KARATE_KING)],
 // Receive a Dratini from the elders in the Dragon's Den
     // FLAG_GOT_DRATINI_FROM_MASTER_JUST_NOW / FLAG_GOT_DRATINI_FROM_MASTER_LONG_AGO
@@ -13654,8 +13743,8 @@ MAP_CERULEAN_CAVE_B1F, // Cerulean Cave / D03R0103 [ev406]
 ["With Some Silph Co. Stocks, Please","Forretress for a Beldum to Steven in the lobby of Silph Co.",3,achFlagAnyMap(FLAG_TRADE_STEVEN_FORRETRESS_BELDUM)],
 ["Rock Collectors Sharing","Bonsly for a Rhyhorn to Brock in Diglett's Cave on Saturday",3,achFlagAnyMap(FLAG_TRADE_BROCK_BONSLY_RHYHORN)],
 ["Don't Mind If I Do!","Trade any Pokémon for a Steelix to Jasmine in her gym",3,achFlagAnyMap(FLAG_TRADE_JASMINE_STEELIX)],
-// Find a Shiny Leaf for your Pokémon
-// Have a Leaf Crown made by Lyra or Ethan after collecting 5 Shiny Leaves on a Pokémon
+["Look What I Found!","Show Lyra or Ethan a Pokemon who has found a Shiny Leaf",2,achFlagInMap(FLAG_SHOWED_FRIEND_A_SHINY_LEAF,MAP_NEW_BARK_RIVAL_HOUSE_2F)],
+["Explored the World, On Foot","Have a Leaf Crown made by Lyra or Ethan after collecting 5 Shiny Leaves on a Pokémon",5,achShinyLeafCrown()],
 // Obtain a Stick from a wild Farfetch'd
 // Solve all eight puzzles of the Ruins of Alph
     // HGSS| sum 8 flags - kabuto, aero, omanyte, hooh puzzle, escape, light, water, hooh
@@ -13687,8 +13776,8 @@ MAP_CERULEAN_CAVE_B1F, // Cerulean Cave / D03R0103 [ev406]
         VAR_TEMP_x4007
     */
 ["Fresh Look","Have one of the Haircut Brothers give your Pokémon a haircut in the Goldenrod Tunnel",2,achFlagInMap(FLAG_DAILY_GOT_HAIRCUT,MAP_GOLDENROD_TUNNEL_B1F)],
-// Obtain an Ether after showing the Fishing Guru a large Magikarp at the Lake of Rage
-    // HGSS| a var?
+// 
+["What a Catch!","Obtain an Ether after showing the Fishing Guru a large Magikarp at the Lake of Rage",3,achMagikarpRecord()],
 ["After School Makeover","Have Daisy groom one of your Pokémon at the Rival's house in Pallet Town between 3:00-3:59PM",2,achFlagInMap(FLAG_DAISY_MASSAGE, MAP_PALLET_TOWN_BLUES_HOUSE_1F)],
 // Win a prize at the Lottery Corner in the Goldenrod Radio Tower
 // Obtain Buena's Pokegear number after earning 30 points from her radio show
@@ -13699,7 +13788,7 @@ MAP_CERULEAN_CAVE_B1F, // Cerulean Cave / D03R0103 [ev406]
     // TODO: add map id check
 ["Fortune Strikes Again and Again","Obtain Lucky Punch from showing a lady on Route 14 a Chansey",3,achFlagAnyMap(FLAG_GOT_LUCKY_PUNCH_FROM_ROUTE_14_WOMAN)],
 // Wake up the Snorlax on Route 11
-// Obtain an Effort Ribbon from a man in Blackthorn City
+["No Pain No Gain","Obtain an Effort Ribbon from a woman in Blackthorn City",3,achEffortRibbion()],
 ["Return of the Technical Machines","Obtain TM27 Return from showing a lady in Goldenrod Department Store a high friendship Pokémon on Sunday",3,achFlagAnyMap(FLAG_GOT_TM27_FROM_DEPARTMENT_LADY)],
 ["Scary Roar","Obtain TM05 Roar from a man on Route 32",2,achFlagAnyMap(FLAG_GOT_TM05_FROM_ROUTE_32_MAN)],
 ["What Type Will It Be?","Obtain TM10 Hidden Power from a man at the Lake of Rage",2,achFlagAnyMap(FLAG_GOT_TM10_FROM_LAKE_OF_RAGE_MAN)],
@@ -13725,12 +13814,12 @@ MAP_CERULEAN_CAVE_B1F, // Cerulean Cave / D03R0103 [ev406]
 // Defeat your rival at the Indigo Plateau on Monday or Wednesday
 // Witness Diamond Dust on Mt. Silver on a special day
     // LocalFieldData->weather = 8
-// Have your Pay Day earnings doubled with an Amulet Coin or Luck Incense
+["Making Bank","Have your Pay Day earnings doubled with an Amulet Coin or Luck Incense",5,achPayDayAmulet()],
 // Land a Pokémon while fishing with a lead Pokémon whose ability is Sticky Hold or Suction Cups
 // Interact with your starter on Victory Road
 // Interact with your Togepi in the Cerulean City Gym
 // Interact with one of your ghost type Pokémon in Lavender Town
-// Complete level 5 in Voltorb Flip
+["Brotlov","Complete level 5 in Voltorb Flip",10,achVoltorbLevelBeat(5)],
 
 ]
 
@@ -13758,3 +13847,18 @@ for a in achs_reg ach(a,"")
 for a in achs_prog ach(a,"progression")
 for a in achs_win ach(a,"win_condition")
 for a in achs_missable ach(a,"missable")
+
+
+leaderboard(
+    title = "Bug Contest",
+    description = "Highest Point Rating",
+    start  = bugContestDone(),
+    cancel = always_false(),
+    submit = always_true(),
+    value  = measured(bugContestScore(5)),
+    format = "VALUE",
+    lower_is_better=false
+)
+
+//TODO: Magikarp largest size
+//TODO: Most Pokémon captured in one Safari Hunt?
