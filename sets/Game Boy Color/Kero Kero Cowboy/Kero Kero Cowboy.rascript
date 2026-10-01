@@ -11,11 +11,8 @@ function if_else(p, t, f) { if (p) { return t } else return f }
 
 // --- MEMORY -------------------------------------------------------------------
 
-// $C0BB: [8-bit] Player Tile X
-function player_tile_x() => byte(0xC0BB)
-
-// $C0BD: [8-bit] Player Tile Y
-function player_tile_y() => byte(0xC0BD)
+function player_x() => word(0xC0BA)
+function player_y() => word(0xC0BC)
 
 // $C0BE: [8-bit] Player Direction
 function player_direction() => byte(0xC0BE)
@@ -444,44 +441,36 @@ function Level(w, s) => LEVELS[w-1][s-1]
 
 // --- ACHIEVEMENTS -------------------------------------------------------------------
 achievement(
-    title = "w_1",
-    points = 0,
-    description = "Complete World 1",
-    trigger = Level(1,6).cleared() && current_scene() == SCENE_CLEAR_CUTSCENE[0],
-    type="progression"
-)
-
-achievement(
-    title = "w_2",
-    points = 0,
-    description = "Complete World 2",
+    title = "For Pete's Sake",
+    points = 3,
+    description = "Defeat Pickaxe Pete",
     trigger = Level(2,6).cleared() && current_scene() == SCENE_CLEAR_CUTSCENE[1],
     type="progression"
 )
-
 achievement(
-    title = "w_3",
-    points = 0,
-    description = "Complete World 3",
-    trigger = Level(3,6).cleared() && current_scene() == SCENE_CLEAR_CUTSCENE[2],
-    type="progression"
-)
-
-achievement(
-    title = "w_4",
-    points = 0,
-    description = "Complete World 4",
+    title = "On like Mountain Marv",
+    points = 5,
+    description = "Defeat Marv, the Mountain Menace",
     trigger = Level(4,6).cleared() && current_scene() == SCENE_CLEAR_CUTSCENE[3],
     type="progression"
 )
 
 achievement(
-    title = "w_5",
-    points = 0,
-    description = "Complete World 5",
-    trigger = Level(5,6).cleared() && current_scene() == SCENE_CLEAR_CUTSCENE[5],
-    type="win_condition"
+    title = "Picky Weedeater", points = 3,
+    description = "In 1-1, carry the first tumbleweed to the end of the level",
+    trigger = once(once(once(once(current_scene() == 7587986 && tongue_cooldown() > prev(tongue_cooldown())) &&
+                  byte(0x00C0ED) == 8) && byte(0x00C0ED) != prev(byte(0x00C0ED))) && mouth_full() > prev(mouth_full())
+              ) && never((prev(mouth_full()) == 1 && mouth_full() == 0)) &&
+              never((mouth_full() == 0 && tongue_cooldown() == 0)) &&
+              trigger_when((prev(player_x()) < 14848 && player_x() >= 14848 && current_scene() == 6560914)) &&
+              never((current_scene() != 7587986 && current_scene() != 7603090 && current_scene() != 6560914))
 )
 
+// Collect every big coin in World 2
+// Collect every big coin in World 4
+// Defeat Pickaxe Pete without leaving the ground or using your gun
+// Climb the mountain and defeat Marv within [time]
+// Complete Level 5-Star without taking damage
+// Complete Level 5-Star within [time]
 
 // --- LEADERBOARDS -------------------------------------------------------------------
