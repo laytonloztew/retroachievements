@@ -8,6 +8,104 @@
     <link rel="icon" href="images/icon.png" type="image/png">
     <link rel="stylesheet" type="text/css" href="globalv3.css?ver=25.12.06.0" />
     <style>
+        input {
+            -webkit-user-select: none;
+            /* Safari */
+            -ms-user-select: none;
+            /* IE 10 and IE 11 */
+            user-select: none;
+            /* Standard syntax */
+        }
+
+        /****************************
+ *
+ * Page Structure
+ *
+ ****************************/
+        #bar {
+            display: flex;
+        }
+
+        #flex-grid {
+            display: flex;
+        }
+
+        .container {
+            max-width: 1000px;
+            min-height: 100vh;
+            background-color: var(--container-bg-color);
+            margin: 0px auto 0px auto;
+            border: 1px solid black;
+            border-width: 0px 1px 0px 1px;
+            -webkit-box-shadow: 0 0 16px #000;
+            box-shadow: 0 0 16px #000;
+        }
+
+        header {
+            position: relative;
+        }
+
+        .base {
+            z-index: 1;
+        }
+
+        header img {
+            width: 100%;
+        }
+
+        section {
+            border: 2px solid #2A2B2F;
+            background-color: #121317;
+            box-shadow: 4px 4px 10px #000;
+            color: gray;
+        }
+
+        h3 {
+            display: block;
+            background-color: #212226;
+            font-size: 12px;
+            margin: 0 0 0 0;
+            border: 0;
+            border-left: 0;
+            border-top: 0;
+            border-right: 0;
+            color: lightgray;
+            text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+            box-shadow: 1px 1px 2px black inset;
+        }
+
+        main {
+            order: 1;
+            width: 100%;
+            padding: 8px 18px;
+            text-align: center;
+        }
+
+        main section {
+            margin-bottom: 16px;
+        }
+
+        main section:last-child {
+            margin-bottom: 0px;
+        }
+
+
+        @media only screen and (max-width: 800px) {
+            body {
+                margin: 0px 12px 0px 12px;
+            }
+
+            #flex-grid {
+                flex-wrap: wrap;
+            }
+
+            main {
+                border-left: 0;
+                border-right: 0;
+            }
+        }
+
+
         :root {
             --container-bg-color: #fbdbcb;
         }
@@ -25,8 +123,8 @@
 
         body {
             margin: 0px 25px 0px 25px;
-            background-color: #F0FDFF;
-            background-image: url("img/layout/bg3.png");
+            background-color: #FBDBC3;
+            background-image: url("img/picto/bg2.png");
             /* Font */
             color: #1F2937;
             font-family: Georgia, serif;
@@ -38,6 +136,12 @@
             overflow: auto;
             /* fallback */
             overflow: overlay;
+        }
+
+        .dark-mode {
+            background-color: #312f2f;
+            color: white;
+            background-image: url("img/picto/bg2.png");
         }
 
         section {
@@ -53,44 +157,9 @@
             margin-bottom: 1.2em;
         }
 
-        .overlay {
-            background: url(img/layout/cloudsky2_day.png);
-            animation: clouds 1000000s linear infinite;
-            background-repeat: repeat-x;
-            background-size: contain;
-            /* or contain, depending on need */
-            background-position: bottom;
-            /* aligns the image’s bottom to the div’s bottom */
-            top: 70%;
-            position: absolute;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            pointer-events: none;
-            z-index: 10;
-        }
-
-        .overlay2 {
-            background: url(img/layout/cloudsky_day.png);
-            animation: clouds 630000s linear infinite;
-            background-repeat: repeat-x;
-            background-size: contain;
-            /* or contain, depending on need */
-            background-position: bottom;
-            /* aligns the image’s bottom to the div’s bottom */
-            top: 70%;
-            position: absolute;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            pointer-events: none;
-            z-index: 20;
-        }
-
         h2 {
             display: block;
-            background-color: #212226;
-            background-image: url("img/layout/bg3.png");
+            background-color: #56575c;
             font-size: 20px;
             margin: 0 0 0 0;
             border: 2px solid #D1C8B9;
@@ -194,86 +263,87 @@
             height: auto;
             display: block;
         }
+
+        .prompt_text:disabled {
+            background-color: gray;
+            color: white;
+            border: 2px blue solid;
+            padding: 6px;
+        }
     </style>
 </head>
 
 <body onload="onLoad()">
-
-
     <div class="container">
-
         <div id="flex-grid">
             <main>
-                <section style="background-color:#fde5d9;">
-                    <h2>PictoImage</h2>
-                    <p>This is a partial recreation of the drawing mode in PictoImage for the Nintendo DS. Drawings can
-                        be saved
-                        as PIQ files to be modded into the game. You can also load PIQ files to view them.</p>
-                    <code>Use <a href="https://github.com/aetiashax/ds-rom">dsrom</a> to extract the files and rebuild
-                        <br/>
-                    files\test_piq\ contains PIQ files<br/>
-                files\ENG\game_1p_script\ contains TXT files with answers and artist info</code><br />
-                    <a href="https://web.archive.org/web/20260114045325/https://drawbox.nekoweb.org/">Based on
-                        DRAWBOX</a><br />
+                <section>
+                    <h2>RA Draws</h2>
+                    <p style="text-align:center;">Join the community event on the RA discord to request a prompt, or
+                        submit a drawing for fun!</p>
+                    <div>
+                        <input type="text" id="request_username"></input>
+                        <button id="request">Request Prompt</button>
+                        <br />
+                        <span id="prompt_text"></span>
+                    </div>
                 </section>
-
-                <!--<input type="button" value="Clear" onclick="clearCanvas()">-->
-                <br />
                 <div style="text-align:center;">
-                    <input id="pencil-button" class="tool-pick" onclick="setTool(0)" type="image"
-                        src="img/picto/tool_0.png" />
-                    <input id="paintbucket-button" class="tool-pick" onclick="setTool(1)" type="image"
-                        src="img/picto/tool_1.png" />
-
-                    <input id="pencil_1" class="pencil-pick" onclick="setDrawScale(0)" type="image"
-                        src="img/picto/pencil_btn_1.png" />
-                    <input id="pencil_2" class="pencil-pick" onclick="setDrawScale(1)" type="image"
-                        src="img/picto/pencil_btn_2.png" />
-                    <input id="pencil_3" class="pencil-pick" onclick="setDrawScale(2)" type="image"
-                        src="img/picto/pencil_btn_3.png" />
-                    <input id="pencil_4" class="pencil-pick" onclick="setDrawScale(3)" type="image"
-                        src="img/picto/pencil_btn_4.png" />
-                    <input id="reset-button" class="trash" type="image" src="img/picto/trash_btn.png" />
-                    <br />
-                    <input id="color_15" class="color-pick" onclick="setDrawColor(0)" type="image"
-                        src="img/picto/color_btn_15.png" />
-                    <input id="color_14" class="color-pick" onclick="setDrawColor(1)" type="image"
-                        src="img/picto/color_btn_14.png" />
-                    <input id="color_8" class="color-pick" onclick="setDrawColor(2)" type="image"
-                        src="img/picto/color_btn_8.png" />
-                    <input id="color_12" class="color-pick" onclick="setDrawColor(3)" type="image"
-                        src="img/picto/color_btn_12.png" />
-                    <input id="color_11" class="color-pick" onclick="setDrawColor(4)" type="image"
-                        src="img/picto/color_btn_11.png" />
-                    <input id="color_10" class="color-pick" onclick="setDrawColor(5)" type="image"
-                        src="img/picto/color_btn_10.png" />
-                    <input id="color_1" class="color-pick" onclick="setDrawColor(6)" type="image"
-                        src="img/picto/color_btn_1.png" />
-                    <input id="color_2" class="color-pick" onclick="setDrawColor(7)" type="image"
-                        src="img/picto/color_btn_2.png" />
-                    <input id="color_4" class="color-pick" onclick="setDrawColor(8)" type="image"
-                        src="img/picto/color_btn_4.png" />
-                    <input id="color_5" class="color-pick" onclick="setDrawColor(9)" type="image"
-                        src="img/picto/color_btn_5.png" />
-                    <input id="color_13" class="color-pick" onclick="setDrawColor(10)" type="image"
-                        src="img/picto/color_btn_13.png" />
-                    <input id="color_9" class="color-pick" onclick="setDrawColor(11)" type="image"
-                        src="img/picto/color_btn_9.png" />
-                    <input id="color_7" class="color-pick" onclick="setDrawColor(12)" type="image"
-                        src="img/picto/color_btn_7.png" />
-                    <input id="color_6" class="color-pick" onclick="setDrawColor(13)" type="image"
-                        src="img/picto/color_btn_6.png" />
-                    <input id="color_3" class="color-pick" onclick="setDrawColor(14)" type="image"
-                        src="img/picto/color_btn_3.png" />
-                    <br />
+                    <div style="-webkit-user-select: none;-ms-user-select: none;user-select: none;">
+                        <input id="pencil-button" class="tool-pick" onclick="setTool(0)" type="image"
+                            src="img/picto/tool_0.png" />
+                        <input id="paintbucket-button" class="tool-pick" onclick="setTool(1)" type="image"
+                            src="img/picto/tool_1.png" />
+                        <input id="pencil_1" class="pencil-pick" onclick="setDrawScale(0)" type="image"
+                            src="img/picto/pencil_btn_1.png" />
+                        <input id="pencil_2" class="pencil-pick" onclick="setDrawScale(1)" type="image"
+                            src="img/picto/pencil_btn_2.png" />
+                        <input id="pencil_3" class="pencil-pick" onclick="setDrawScale(2)" type="image"
+                            src="img/picto/pencil_btn_3.png" />
+                        <input id="pencil_4" class="pencil-pick" onclick="setDrawScale(3)" type="image"
+                            src="img/picto/pencil_btn_4.png" />
+                        <input id="reset-button" class="trash" type="image" src="img/picto/trash_btn.png" />
+                        <br />
+                        <input id="color_15" class="color-pick" onclick="setDrawColor(0)" type="image"
+                            src="img/picto/color_btn_15.png" />
+                        <input id="color_14" class="color-pick" onclick="setDrawColor(1)" type="image"
+                            src="img/picto/color_btn_14.png" />
+                        <input id="color_8" class="color-pick" onclick="setDrawColor(2)" type="image"
+                            src="img/picto/color_btn_8.png" />
+                        <input id="color_12" class="color-pick" onclick="setDrawColor(3)" type="image"
+                            src="img/picto/color_btn_12.png" />
+                        <input id="color_11" class="color-pick" onclick="setDrawColor(4)" type="image"
+                            src="img/picto/color_btn_11.png" />
+                        <input id="color_10" class="color-pick" onclick="setDrawColor(5)" type="image"
+                            src="img/picto/color_btn_10.png" hidden />
+                        <input id="color_1" class="color-pick" onclick="setDrawColor(6)" type="image"
+                            src="img/picto/color_btn_1.png" />
+                        <input id="color_2" class="color-pick" onclick="setDrawColor(7)" type="image"
+                            src="img/picto/color_btn_2.png" />
+                        <input id="color_4" class="color-pick" onclick="setDrawColor(8)" type="image"
+                            src="img/picto/color_btn_4.png" />
+                        <input id="color_5" class="color-pick" onclick="setDrawColor(9)" type="image"
+                            src="img/picto/color_btn_5.png" />
+                        <input id="color_13" class="color-pick" onclick="setDrawColor(10)" type="image"
+                            src="img/picto/color_btn_13.png" />
+                        <input id="color_9" class="color-pick" onclick="setDrawColor(11)" type="image"
+                            src="img/picto/color_btn_9.png" />
+                        <input id="color_7" class="color-pick" onclick="setDrawColor(12)" type="image"
+                            src="img/picto/color_btn_7.png" />
+                        <input id="color_6" class="color-pick" onclick="setDrawColor(13)" type="image"
+                            src="img/picto/color_btn_6.png" />
+                        <input id="color_3" class="color-pick" onclick="setDrawColor(14)" type="image"
+                            src="img/picto/color_btn_3.png" />
+                        <br />
+                    </div>
                     Scale:
                     <button onclick="setCanvasScale(1)">1x</button>
                     <button onclick="setCanvasScale(2)">2x</button>
                     <button onclick="setCanvasScale(3)">3x</button>
                     <button onclick="setCanvasScale(4)">4x</button>
-                    <!--<input type="button" id="reset-button" value="Reset Canvas" onclick="resetButton()">-->
+                    |
+                    <button id="submit">Submit Drawing</button>
                     <br />
-
                     <canvas class="paint-canvas" width="197" height="176"></canvas>
 
                     <div id="progressContainer" style="background-color: #cccccc;">
@@ -281,26 +351,8 @@
                             style="width: 100%; height: 20px; background-color: #111111; transition: width 0.1s ease 0s;">
                         </div>
                     </div>
-
-
-                    <br />
-                    <button id="save" disabled>Save To PIQ File</button>
-                    <button id="submit">Submit Drawing</button>
-                    <br />
-                    <br />
-                    Load PIQ:
-                    <input type='file' id='myFile' accept=".PIQ" style="border:1px solid rgb(214, 118, 118);" />
-
-
-                    <br />
-                    <br />
-                    <hr>
-                    <!--<input type="text" id="submit-user" value="Username">-->
-                    <h1>Submitted Drawings</h1>
-                    <code>(manually whitelisted)</code>
-                    <div id="gallery">Loading images...</div>
                 </div>
-
+                <br />
                 <script src="pictoimage_draw.js?ver=26.09.06.0"></script>
             </main>
         </div>

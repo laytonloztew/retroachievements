@@ -1,15 +1,22 @@
-const GOOGLE_FORM_ID = "1FAIpQLSc_3oap_CSgB711XPOVVvmEzv6OrvqfxwCFLeRFo-RlWOw9Rw";
-const ENTRY_ID = "entry.104341090";
-const ENTRY_ID_USER = "entry.654119116";
-const ENTRY_ID_PROMPT = "entry.588355377";
+const GOOGLE_FORM_ID = "1FAIpQLSe_ZE1TjNFuSYSMb4R551_I64Vyd9p7raQ0HowN6_bOE8DZdw";
+const ENTRY_ID = "entry.1853420081";
+const ENTRY_ID_USER = "entry.1816329927";
+const ENTRY_ID_PROMPT = "entry.1063690409";
+const ENTRY_ID_ISEVENT = "entry.176811728";
 const GOOGLE_SHEET_ID = "1xXP3nMv7hnLFeWX5J7hXupKZyU4EHURTnQeiSaZPDWM";
+const REQUEST_GOOGLE_FORM_ID = "1FAIpQLSc25Az3mkzMGyJiFdoh3ISK7Hp9cQEnHQrlGXYE6GrtyLqbQQ";
+const REQUEST_ENTRY_ID_USER = "entry.1016051301";
+const REQUEST_ENTRY_ID_PROMPT = "entry.1677497220";
+const REQUEST_GOOGLE_SHEET_ID = "1soayswKwgTMeYdkDV_oe3YMk6DrWdv2F5Vbs-gc3LoM";
+const PROMPT_GOOGLE_SHEET_ID = "1pQZAB9NKOVvqiGs5ANHX0jfha47KCoWTP8iYm18Zf4A";
+const IDEAS_GOOGLE_SHEET_ID = "1rvmYm-3opkwk-MFymboL6rYewwxhWykPNf4fu8a1FAo";
+const DISABLE_PROMPTS = true;
 
-const CLIENT_ID = "b4fb95e0edc434c";
-const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/" + GOOGLE_SHEET_ID + "/export?format=csv";
-const GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/" + GOOGLE_FORM_ID + "/formResponse";
-
-const BYPASS_VERIFIED = true;
+const BYPASS_VERIFIED = false;
 const ALLOW_DBL_CLICK_SAVING = true;
+
+var my_user = "";
+var my_prompt = "";
 
 const paintCanvas = document.querySelector('.paint-canvas');
 const context = paintCanvas.getContext('2d');
@@ -30,9 +37,12 @@ const color_pickers = document.getElementsByClassName("color-pick");
 const pencil_pickers = document.getElementsByClassName("pencil-pick");
 const tool_pickers = document.getElementsByClassName("tool-pick");
 
-const save_button = document.getElementById("save");
+//const save_button = document.getElementById("save");
 const reset_button = document.getElementById("reset-button");
 const submit_button = document.getElementById("submit");
+const request_button = document.getElementById("request");
+const request_input = document.getElementById("request_username");
+const prompt_text = document.getElementById("prompt_text");
 
 const CANVAS_WIDTH = 197;
 const CANVAS_HEIGHT = 176;
@@ -87,6 +97,13 @@ function getCanvasState(canvas) {
 	return canvasStates.get(canvas);
 }
 
+function googleSheetURL(id) {
+	return "https://docs.google.com/spreadsheets/d/" + id + "/export?format=csv";
+}
+
+function googleFormURL(id) {
+	return "https://docs.google.com/forms/d/e/" + id + "/formResponse";
+}
 
 function hexToInt(offset, size) {
 	var val = "";
@@ -230,25 +247,19 @@ fReader.onload = function (e) {
 	isViewing = true;
 	reset_button.disabled = true;
 	reset_button.value = "Drawing...";
-	save_button.disabled = submit_button.disabled = true;
+	submit_button.disabled = true;
 	viewDrawing(savefile).then(() => {
 		reset_button.disabled = false;
 		reset_button.value = "Reset Canvas";
 	});
 }
 
-fileInput.onchange = function (e) {
-	var file = this.files[0];
-	fReader.readAsBinaryString(file);
-}
-
 const zeroPad = (num, places) => String(num).padStart(places, '0')
 
 function outputToArray(arr) {
-	console.log(arr);
 	if (outputArray.length == 0) {
 		outputArray = [49, 81, 73, 80, 0, 0, 0, 0];
-		save_button.disabled = submit_button.disabled = false;
+		submit_button.disabled = false;
 	}
 	arr.forEach((e) => outputArray.push(e));
 	updateInk();
@@ -263,7 +274,7 @@ function updateInk() {
 	let secondHalf = inkUsedHex.substring(2, 4);
 
 	if (outputArray.length > 0 && !isViewing) {
-		save_button.disabled = submit_button.disabled = false;
+		submit_button.disabled = false;
 	}
 
 	if (outputArray.length == 0) {
@@ -460,7 +471,7 @@ function resetCanvas() {
 	outputArray = [];
 	isViewing = false;
 	viewingCommandCounter = 0;
-	save_button.disabled = submit_button.disabled = true;
+	submit_button.disabled = true;
 	lastColorUsed = 0;
 	lastScaleUsed = 0;
 	lastX = lastY = 0;
@@ -616,6 +627,7 @@ paintCanvas.addEventListener("pointerup", stopDrawing);
 paintCanvas.addEventListener("pointercancel", stopDrawing);
 
 // SAVE DRAWING TO PIQ
+/*
 document.getElementById("save").addEventListener("click", () => {
 	const bytes = new Uint8Array(outputArray);
 
@@ -629,7 +641,7 @@ document.getElementById("save").addEventListener("click", () => {
 	link.click();
 
 	URL.revokeObjectURL(link.href);
-});
+});*/
 
 function onLoad() {
 	resetCanvas();
@@ -638,12 +650,19 @@ function onLoad() {
 	setDrawColor(0);
 	lastColorUsed = 0;
 	lastScaleUsed = 0;
+
+	request_input.value = "";
+
+	if (DISABLE_PROMPTS) {
+		prompt_text.textContent = "Check back later for prompts...";
+		request_input.disabled = true;
+		request_button.disabled = true;
+	}
+
 }
 
 submit_button.addEventListener("click", async function () {
-	const submitButton = document.getElementById("submit");
-
-	submitButton.disabled = true;
+	submit_button.disabled = true;
 
 	const imageData = paintCanvas.toDataURL("image/png");
 	const blob = await (await fetch(imageData)).blob();
@@ -654,15 +673,21 @@ submit_button.addEventListener("click", async function () {
 		const googleFormData = new FormData();
 		const csvRow = `"${outputArray.join(".")}"`;
 
-		let username = prompt("Please enter your name", "Anonymous");
-		let art_name = prompt("What is your drawing of?", "");
+		let username = my_user;
+		let art_name = my_prompt;
+
+		if (!username || !art_name) {
+			username = prompt("Enter your username", "");
+			art_name = prompt("What is your drawing of?", "");
+		}
 
 		if (username && art_name) {
 			googleFormData.append(ENTRY_ID, csvRow);
 			googleFormData.append(ENTRY_ID_USER, username);
 			googleFormData.append(ENTRY_ID_PROMPT, art_name);
+			googleFormData.append(ENTRY_ID_ISEVENT, my_user != "");
 
-			await fetch(GOOGLE_FORM_URL, {
+			await fetch(googleFormURL(GOOGLE_FORM_ID), {
 				method: "POST",
 				body: googleFormData,
 				mode: "no-cors",
@@ -677,13 +702,113 @@ submit_button.addEventListener("click", async function () {
 		console.error(error);
 		alert("Error submitting to Google Form.");
 	} finally {
-		submitButton.disabled = false;
+		submit_button.disabled = false;
+	}
+});
+
+request_button.addEventListener("click", async function () {
+	try {
+		const googleFormData = new FormData();
+		const csvRow = `"${outputArray.join(".")}"`;
+
+		let username = request_input.value.trim().toLowerCase();
+		if (username) {
+
+			// Check if user has submitted a prompt idea
+			const response = await fetch(googleSheetURL(IDEAS_GOOGLE_SHEET_ID));
+			const csvText = await response.text();
+			const rows = csvText.split("\n").slice(1);
+			is_eligible = false;
+
+			for (const row of rows) {
+				const columns = row.split(",");
+				if (columns.length < 2) return;
+
+				const user = columns[1].trim().toLowerCase();
+				if (username == user) {
+					is_eligible = true;
+				}
+			}
+
+			if (is_eligible) {
+				// Download Prompts 
+				const response = await fetch(googleSheetURL(PROMPT_GOOGLE_SHEET_ID));
+				const csvText = await response.text();
+				const rows = csvText.split("\n").slice(1);
+
+				has_prompt = false;
+				this_prompt = "";
+
+				i = 0;
+				r = Math.floor(Math.random() * (10)) + 1;
+				for (const row of rows.reverse()) {
+					const columns = row.split(",");
+					if (columns.length < 2) return;
+
+					const prompt = columns[0].trim();
+					const submitter = columns[1].trim().toLowerCase();
+					const user = columns[2].trim().toLowerCase();
+
+
+					if (prompt != "") {
+						if (username == user) {
+							//already assigned prompt
+							this_prompt = prompt;
+							has_prompt = true;
+							break;
+						}
+
+						prompt_available = (user == "#n/a");
+						prompt_from_this_user = (username == submitter);
+
+						if (prompt_available && !prompt_from_this_user) {
+							if (this_prompt == "" || (submitter != "pictoimage" && r > 0)) {
+								this_prompt = prompt;
+								r--;
+							}
+
+						}
+					}
+
+					i += 1;
+				}
+
+				if (!has_prompt) {
+					// submit request
+					googleFormData.append(REQUEST_ENTRY_ID_USER, username);
+					googleFormData.append(REQUEST_ENTRY_ID_PROMPT, this_prompt);
+
+					await fetch(googleFormURL(REQUEST_GOOGLE_FORM_ID), {
+						method: "POST",
+						body: googleFormData,
+						mode: "no-cors",
+					});
+
+					//alert("Upload Successful");
+				}
+
+				prompt_text.textContent = "Your Prompt: " + this_prompt;
+
+				request_input.disabled = true;
+				request_button.disabled = true;
+
+				my_user = username;
+				my_prompt = this_prompt;
+
+				submit_button.textContent = "Submit " + my_user + "'s Prompt Drawing";
+
+			} else {
+				prompt_text.textContent = "User hasn't submitted a prompt idea!";
+			}
+		}
+	} catch (error) {
+		console.error("Error requesting prompt:", error);
 	}
 });
 
 async function fetchImages() {
 	try {
-		const response = await fetch(GOOGLE_SHEET_URL);
+		const response = await fetch(googleSheetURL(GOOGLE_SHEET_ID));
 		const csvText = await response.text();
 		const rows = csvText.split("\n").slice(1);
 
@@ -770,7 +895,7 @@ async function fetchImages() {
 	}
 }
 
-fetchImages();
+//fetchImages();
 
 const dwnlViewDrawing = async (cnv, piq_data, delay = 0) => {
 	const state = getCanvasState(cnv);
