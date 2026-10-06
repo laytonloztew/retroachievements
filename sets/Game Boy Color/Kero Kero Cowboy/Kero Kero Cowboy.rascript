@@ -290,6 +290,8 @@ class LevelData
 
 	function in_level() => any_of(this.scenes, s => current_scene() == s)
 	function cleared() => prev(word(this.clear)) == 0 && word(this.clear) == 1
+	function has_coins() => length(this.coins) == 3
+	function coin_count() => sum_of(this.coins, addr => word(addr))
 	function all_coins() => sum_of(this.coins, addr => word(addr))
 	function all_coins_award() => word(this.allcoins)
 }
@@ -371,7 +373,7 @@ LEVELS = [
 			coins=[0xCCE7, 0xCCE9, 0xCCEB], allcoins=0xCD0B),
 		LevelData(world=4, stage=2, clear=0xCCF5, 
 			scenes=[0x735292, 0x4A4C92, 0x4A8792, 0x4AC292], 
-			coins=[0xCCEF, 0xCCEF1, 0xCCF3], allcoins=0xCD0D),
+			coins=[0xCCEF, 0xCCF1, 0xCCF3], allcoins=0xCD0D),
 		LevelData(world=4, stage=3, clear=0xCCFD, 
 			scenes=[0x4B3892, 0x4BAE92, 0x4BE992, 0x4C2492], 
 			coins=[0xCCF7, 0xCCF9, 0xCCFB], allcoins=0xCD0F),
@@ -437,6 +439,12 @@ SCENE_CREDITS = 0x5fbb92
 
 function Level(w, s) => LEVELS[w-1][s-1]
 
+function all_world_coins(w) => (
+	__ornext(any_of(range(1,5), s => Level(w,s).in_level())) &&
+	prev(sum_of(range(1,5), s => Level(w,s).coin_count())) == 14 &&
+	measured(sum_of(range(1,5), s => Level(w,s).coin_count()) == 15)
+)
+
 // --- RICH PRESENCE -------------------------------------------------------------------
 
 // --- ACHIEVEMENTS -------------------------------------------------------------------
@@ -466,11 +474,53 @@ achievement(
               never((current_scene() != 7587986 && current_scene() != 7603090 && current_scene() != 6560914))
 )
 
-// Collect every big coin in World 2
-// Collect every big coin in World 4
-// Defeat Pickaxe Pete without leaving the ground or using your gun
-// Climb the mountain and defeat Marv within [time]
-// Complete Level 5-Star without taking damage
-// Complete Level 5-Star within [time]
+achievement(
+    title = "Peak Performance", points = 5,
+    description = "Climb the mountain and defeat Marv within one minute",
+    trigger = once(current_scene() == 5156242 && byte(0x00C53C) == 1 && prev(word(0x00C0BA)) <= 384 && word(0x00C0BA) > 384) &&
+              never(repeated(3601,
+                  once(current_scene() == 5156242 && byte(0x00C53C) == 1 && prev(word(0x00C0BA)) <= 384 &&
+                  word(0x00C0BA) > 384) && byte(0x00C91F) == 128)
+              ) && never(byte(0x00C53C) != 1) && never(word(0x00CB9F) == 0) && trigger_when(current_scene() == 5201554) &&
+              trigger_when(word(0x00CBDB) == 0) && trigger_when(prev(byte(0x00C230)) != 7) &&
+              trigger_when(byte(0x00C230) == 7)
+)
+
+achievement(
+    title = "No Gun, You're Grounded", points = 5,
+    description = "Defeat Pickaxe Pete without leaving the ground or using your gun",
+    trigger = never(word(0x00CBA1) < prev(word(0x00CBA1))) && trigger_when(current_scene() == 6998930) &&
+              trigger_when(word(0x00CBDB) == 0) &&
+              once(current_scene() == 6998930 && current_scene() == prev(current_scene()) && byte(0x00C53C) == 1 &&
+                  prev(word(0x00C0BC)) <= 384 && word(0x00C0BC) > 384
+              ) &&
+              never((current_scene() == prev(current_scene()) && prev(word(0x00C0BC)) >= 1616 && word(0x00C0BC) < 1616)) &&
+              never(current_scene() != 6998930) &&
+              ((trigger_when(prev(byte(0x00C12C)) != 71) && trigger_when(byte(0x00C12C) == 71)) ||
+               (trigger_when(prev(byte(0x00C12C)) != 50) && trigger_when(byte(0x00C12C) == 50)) ||
+               (trigger_when(prev(byte(0x00C12C)) != 92) && trigger_when(byte(0x00C12C) == 92)))
+)
+
+achievement(
+    title = "How Tough Are Ya?", points = 10,
+    description = "Clear every room in the Saloon in 5-Star without taking damage",
+    trigger = once(prev(current_scene()) == 5775506 && current_scene() == 5790610) && never(byte(0x00C53C) != 1) &&
+              never(word(0x00CB9F) < prev(word(0x00CB9F))) && trigger_when(prev(word(0x00CB9F)) == 2) &&
+              trigger_when(word(0x00CB9F) == 2)
+)
+
+achievement(
+	title="The Treasure of Mole Mines",
+	description="Collect every big coin in World 2",
+	points=10,
+	trigger=all_world_coins(2)
+)
+
+achievement(
+	title="The Treasure of Musty Mountain",
+	description="Collect every big coin in World 4",
+	points=10,
+	trigger=all_world_coins(4)
+)
 
 // --- LEADERBOARDS -------------------------------------------------------------------
