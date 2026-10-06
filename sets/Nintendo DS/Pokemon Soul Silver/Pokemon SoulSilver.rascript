@@ -1,6 +1,11 @@
 // Pokémon SoulSilver Version
 // #ID = 39076
 
+// Badge Info
+// drop shadow: 0.0 2.5 -45.00 0.40 #000000
+// outline: 1 0 #ffffff or #D0D8E0 ?
+//
+
 function has_increased(addr) => addr > prev(addr)
 function has_decreased(addr) => addr < prev(addr)
 function has_changed(addr) => addr != prev(addr)
@@ -13289,6 +13294,10 @@ function achVoltorbLevelBeat(level) => inGame() &&
         voltorbOutcome() == ROUND_OUTCOME_WON && 
         prev(voltorbOutcome()) == ROUND_OUTCOME_NONE
 
+function achHallOfFame() => currentOverlayID(0) == OV_HALLOFFAME &&
+        has_changed(currentOverlayID(0)) &&
+        currMapID() == MAP_POKEMON_LEAGUE_HALL_OF_FAME
+
 GenderLookup = {
     0: "♂",
     1: "♀"
@@ -13423,7 +13432,7 @@ achs_reg = [
 ["Besting the Genius","Defeat Sabrina and earn the Marsh Badge",5,achKantoBadgeObtained(BADGE_MARSH)],
 ["The Fire Specialist at the Core of the Island","Defeat Blaine and earn the Volcano Badge",5,achKantoBadgeObtained(BADGE_VOLCANO)],
 ["A Full Badge Collection","Defeat Blue and earn the Earth Badge",5,achKantoBadgeObtained(BADGE_EARTH)],
-// Defeat the Elite Four in the second league and enter the Hall of Fame
+["Two Times Champion","Defeat the Elite Four in the second league and enter the Hall of Fame",25,achHallOfFame() && sumKBadges() == 8],
 ["Fated Meeting at the Summit","Defeat Red on Mt. Silver",10,achTrainerDefeated([TRAINER_PKMN_TRAINER_RED_RED])],
 ["Tower Tycoon Palmer Met and Defeated","Obtain the Silver Print in the Battle Tower",25,achSilverPrint(0) && inBattleTower()],
 ["Palmer's Ultimate Team","Obtain the Gold Print in the Battle Tower",50,achGoldPrint(0) && inBattleTower()],
@@ -13835,8 +13844,7 @@ achs_prog = [
 ]
 
 achs_win = [
-    // Defeat the Elite Four in the first league and enter the Hall of Fame
-        // HGSS| 0x001cecf4 0 -> 100, Kanto Badges < 8
+    ["Making History","Defeat the Elite Four in the first league and enter the Hall of Fame",10,achHallOfFame() && sumKBadges() < 8],
 ]
 
 achs_missable = [
