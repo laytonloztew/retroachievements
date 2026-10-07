@@ -436,7 +436,6 @@ SCENE_MUSIC_PLAYER = 0x603192
 SCENE_CREDITS = 0x5fbb92
 
 // --- AUX FUNCTIONS  -------------------------------------------------------------------
-
 function Level(w, s) => LEVELS[w-1][s-1]
 
 function all_world_coins(w) => (
@@ -445,18 +444,16 @@ function all_world_coins(w) => (
 	measured(sum_of(range(1,5), s => Level(w,s).coin_count()) == 15)
 )
 
-// --- RICH PRESENCE -------------------------------------------------------------------
-
 // --- ACHIEVEMENTS -------------------------------------------------------------------
 achievement(
     title = "For Pete's Sake",
-    points = 3,
+    points = 5,
     description = "Defeat Pickaxe Pete",
     trigger = Level(2,6).cleared() && current_scene() == SCENE_CLEAR_CUTSCENE[1],
     type="progression"
 )
 achievement(
-    title = "On like Mountain Marv",
+    title = "On Like Mountain Marv",
     points = 5,
     description = "Defeat Marv, the Mountain Menace",
     trigger = Level(4,6).cleared() && current_scene() == SCENE_CLEAR_CUTSCENE[3],
