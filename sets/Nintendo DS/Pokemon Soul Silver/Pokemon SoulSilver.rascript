@@ -44,6 +44,8 @@ function r(offset) => ptr(REGION_PTR_ADDR,[0x00,offset],acc_addr)
 function s(offset) => ptr(REGION_PTR_ADDR,[0x00,0xC09C8,offset],acc_addr)
 function save_ptr() => ptr(REGION_PTR_ADDR,[0x00,0xC09C8],dword)
 
+function money() => dword(s(0x88))
+
 johtoBadges_addr = s(0x8e)
 kantoBadges_addr = s(0x93)
 
@@ -73,9 +75,7 @@ function pkmnCaughtGroup(g) => sum_of(g, p => pkmnCaught(p))
 function currentOverlayID(index) => dword(r(0xBF590 + (index * 8)))
 function isActiveOverlay(index) => dword(r(0xBF594 + (index * 8))) == 1
 
-function gSystem() => dword(r(0xBF8AC))
-
-function inGame() => gSystem() != 0 && /*isActiveOverlay(0) &&*/ currentOverlayID(0) != OV_INTRO_TITLE && currentOverlayID(0) != OV_MAINMENU
+function inGame() => tbyte(REGION_PTR_ADDR) != 0 && hasnt_changed(tbyte(REGION_PTR_ADDR)) && dword(r(0xbfd24)) != 0 && currentOverlayID(0) != 0 && currentOverlayID(0) != OV_INTRO_TITLE && currentOverlayID(0) != OV_MAINMENU
 function inBattle() => inGame() && currentOverlayID(0) == OV_BATTLE
 
 OV_WIFISETTINGS = 0
@@ -111,15 +111,39 @@ function flag(f) => bit(f%8, s(0x10d4) + f/8)
 function trainer_flag(f) => flag(f + 0x550)//bit(f%8, s(0x10d4) + TRAINER_FLAG_BASE + f/8)
 
 function currMapID() => dword(s(0x1244))
+function posX() => dword(s(0x124c))
+function posY() => dword(s(0x1250))
+
+WEATHER_SUNNY = 0
+WEATHER_RAIN = 1
+WEATHER_HEAVY_RAIN = 2
+WEATHER_THUNDERSTORM = 3
+WEATHER_UNKNOWN_4 = 4
+WEATHER_SNOW = 5
+WEATHER_BLIZZARD = 6
+WEATHER_SANDSTORM = 7
+WEATHER_DIAMOND_DUST = 8
+WEATHER_UNKNOWN_9 = 9
+WEATHER_UNKNOWN_10 = 10
+WEATHER_FLASH = 11
+WEATHER_FLASH_2 = 12
+WEATHER_LOW_LIGHT = 13
+function currWeather() => word(s(0x12AA))
 
 function achFlagInMap(flag_id, map_id) => achFlagAnyMap(flag_id) && currMapID() == map_id
 function achFlagAnyMap(flag_id) => inGame() && has_increased(flag(flag_id))
+function achFlagDisableAnyMap(flag_id) => inGame() && has_decreased(flag(flag_id))
+function achFlagDisableInMap(flag_id, map_id) => achFlagDisableAnyMap(flag_id) && currMapID() == map_id
 
 function achFlagGroup(g) => inGame() && 
-                            measured(sum_of(g, f => flag(f)) == length(g)) &&
+                            measured(sum_of(g, f => flag(f)) == length(g), when=inGame()) &&
                             sum_of(g, f => prev(flag(f))) == length(g) - 1
 
 function achVarChange(v,f,t) => inGame() && var(v) == t && prev(var(v)) == f
+
+function achVarGroupNonZero(g) => inGame() && 
+                           sum_of(g, f => var(f) / var(f)) == length(g) &&
+                           sum_of(g, f => prev(var(f)) / prev(var(f))) == length(g) - 1
 
 function achJohtoBadgeObtained(i) => inGame() && has_increased(johtoBadgeObtained(i))
 function achKantoBadgeObtained(i) => inGame() && has_increased(kantoBadgeObtained(i))
@@ -134,6 +158,9 @@ HEAP_ID_VOLTORB = 160
 function heapIndex(heap_id) => ptr(dword(r(0xbfd34)),[heap_id],byte)
 function heapStartAddr() => ptr(dword(r(0xbfd24)),[0x00],acc_addr)
 function heap(heap_id) => ptr(dword(heapStartAddr() + (heapIndex(heap_id) * 4)),[0x18,0x00],acc_addr)
+function isHeapActive(heap_id) => heapIndex(heap_id) != 0x1c && 
+        heapIndex(heap_id) != 0 && 
+        heapIndex(heap_id) != 0xff
 
 function battleTrainer() => word(heap(HEAP_ID_BATTLE) + 0xc2)
 function battleContextPtr() => dword(heap(HEAP_ID_BATTLE) + 0x50)
@@ -146,8 +173,8 @@ BATTLE_RESULT_CAPTURED_MON = 4
 BATTLE_RESULT_PLAYER_FLED = 5
 BATTLE_RESULT_ENEMY_FLED = 6
 function battleOutcome() => byte(heap(HEAP_ID_BATTLE) + 0x2440)
-function battleWon() => battleOutcome() == BATTLE_RESULT_WIN && prev(battleOutcome()) == BATTLE_IN_PROGRESS
-function battleCaught() => battleOutcome() == BATTLE_RESULT_CAPTURED_MON && prev(battleOutcome()) == BATTLE_IN_PROGRESS
+function battleWon() => battleOutcome() == BATTLE_RESULT_WIN && prev(battleOutcome()) == BATTLE_IN_PROGRESS && isHeapActive(HEAP_ID_BATTLE)
+function battleCaught() => battleOutcome() == BATTLE_RESULT_CAPTURED_MON && prev(battleOutcome()) == BATTLE_IN_PROGRESS && isHeapActive(HEAP_ID_BATTLE)
 
 function battleTypeAddr() => heap(5) + 0x4C
 function isTrainerBattle() => bit(0,battleTypeAddr()) == 1
@@ -174,6 +201,7 @@ function achMagikarpRecord() => inGame() &&
             
 
 function achShinyLeafCrown() => unless(!inGame()) && 
+        isHeapActive(HEAP_ID_CERTIFICATES) &&
         dword(heap(HEAP_ID_CERTIFICATES) + 0x20) == HEAP_ID_CERTIFICATES && 
         dword(heap(HEAP_ID_CERTIFICATES) + 0x24) == 2 && 
         word(heap(HEAP_ID_CERTIFICATES) + 0x62) == 0x3c && 
@@ -3557,7 +3585,7 @@ VAR_TEMP_x4000 = 0x4000
     VAR_UNK_40F3 = 0x40F3
     VAR_UNK_40F4 = 0x40F4
     VAR_UNK_40F5 = 0x40F5
-    VAR_UNK_40F6 = 0x40F6
+    VAR_SCENE_CLEFAIRY_DANCE = 0x40F6
     VAR_UNK_40F7 = 0x40F7
     VAR_UNK_40F8 = 0x40F8
     VAR_SCENE_EMBEDDED_TOWER = 0x40F9
@@ -10185,22 +10213,6 @@ TRAINER_BIKER_ERNEST_4,
 TRAINER_BIKER_REESE_4
 ]
 
-WEATHER_SUNNY = 0
-    WEATHER_RAIN = 1
-    WEATHER_HEAVY_RAIN = 2
-    WEATHER_THUNDERSTORM = 3
-    WEATHER_UNKNOWN_4 = 4
-    WEATHER_SNOW = 5
-    WEATHER_BLIZZARD = 6
-    WEATHER_SANDSTORM = 7
-    WEATHER_DIAMOND_DUST = 8
-    WEATHER_UNKNOWN_9 = 9
-    WEATHER_UNKNOWN_10 = 10
-    WEATHER_FLASH = 11
-    WEATHER_FLASH_2 = 12
-    WEATHER_LOW_LIGHT = 13
-
-
 GROUP_FLAG_INCENSE = [
     FLAG_HIDE_ITEMBALL_D38R0102_FULL_INCENSE,
     FLAG_HIDE_ITEMBALL_D41R0102_PURE_INCENSE,
@@ -13077,17 +13089,17 @@ function sumTrainerGroups(groups) {
         return i
 } 
 
-function achTrainersDefeatedMaps(group) => measured(sumTrainerGroups(group) == totalTrainersGroups(group)) &&
+function achTrainersDefeatedMaps(group) => measured(sumTrainerGroups(group) == totalTrainersGroups(group), when=inGame()) &&
         prev(sumTrainerGroups(group)) >= totalTrainersGroups(group) - 2 &&
         prev(sumTrainerGroups(group)) < totalTrainersGroups(group) &&
         unless(save_ptr() != prev(save_ptr())) &&
-        unless(dword(REGION_PTR_ADDR) != prev(dword(REGION_PTR_ADDR))) &&
+        unless(tbyte(REGION_PTR_ADDR) != prev(tbyte(REGION_PTR_ADDR))) &&
         unless(!inGame())
 
 function achTrainersDefeatedGroup(group) => unless(save_ptr() != prev(save_ptr())) &&
-        unless(dword(REGION_PTR_ADDR) != prev(dword(REGION_PTR_ADDR))) &&
+        unless(tbyte(REGION_PTR_ADDR) != prev(tbyte(REGION_PTR_ADDR))) &&
         unless(!inGame()) &&
-        measured(sum_of(group, f => trainer_flag(f)) == length(group)) &&
+        measured(sum_of(group, f => trainer_flag(f)) == length(group), when=inGame()) &&
         prev(sum_of(group, f => trainer_flag(f))) == length(group) - 1
 
 
@@ -13113,11 +13125,11 @@ function sumItemsGroups(groups) {
     return i
 }
 
-function achItemsFound(groups) => measured(sumItemsGroups(groups) == totalItemsGroups(groups)) &&
+function achItemsFound(groups) => measured(sumItemsGroups(groups) == totalItemsGroups(groups), when=inGame()) &&
         prev(sumItemsGroups(groups)) >= totalItemsGroups(groups) - 2 &&
         prev(sumItemsGroups(groups)) < totalItemsGroups(groups) &&
         unless(save_ptr() != prev(save_ptr())) &&
-        unless(dword(REGION_PTR_ADDR) != prev(dword(REGION_PTR_ADDR))) &&
+        unless(tbyte(REGION_PTR_ADDR) != prev(tbyte(REGION_PTR_ADDR))) &&
         unless(!inGame())
 
 function achPkmnCaughtOrDefeated(id) => inGame() && (battleCaught() || battleWon()) && battleMonSpecies(1) == id
@@ -13205,19 +13217,20 @@ function sumTrendyWords() => sum_of(range(0+32,31+32), i => easyChatFlag(i))
 
 function achTrendyWords() => unless(!inGame()) &&
         unless(save_ptr() != prev(save_ptr())) &&
-        unless(dword(REGION_PTR_ADDR) != prev(dword(REGION_PTR_ADDR))) &&
-        measured(sumTrendyWords() == 32) &&
+        unless(tbyte(REGION_PTR_ADDR) != prev(tbyte(REGION_PTR_ADDR))) &&
+        measured(sumTrendyWords() == 32, when=inGame()) &&
         prev(sumTrendyWords()) == 31
 
 function achPokemonCaught(id) => inGame() &&
+        save_ptr() != 0 &&
         save_ptr() == prev(save_ptr()) &&
-        dword(REGION_PTR_ADDR) == prev(dword(REGION_PTR_ADDR)) &&
+        tbyte(REGION_PTR_ADDR) == prev(tbyte(REGION_PTR_ADDR)) &&
         has_increased(pkmnCaught(id))
 
 function achPokemonCaughtGroup(g, amt) => unless(!inGame()) &&
         unless(save_ptr() != prev(save_ptr())) &&
-        unless(dword(REGION_PTR_ADDR) != prev(dword(REGION_PTR_ADDR))) &&
-        measured(pkmnCaughtGroup(g) == amt) &&
+        unless(tbyte(REGION_PTR_ADDR) != prev(tbyte(REGION_PTR_ADDR))) &&
+        measured(pkmnCaughtGroup(g) == amt, when=inGame()) &&
         prev(pkmnCaughtGroup(g)) == amt - 1
 
 function sealAmt(i) => byte(s(0x4e30 + i))
@@ -13226,8 +13239,8 @@ function sumSeals() => sum_of(range(0,76), i => hasSeal(i))
 
 function achSeals() => unless(!inGame()) &&
         unless(save_ptr() != prev(save_ptr())) &&
-        unless(dword(REGION_PTR_ADDR) != prev(dword(REGION_PTR_ADDR))) &&
-        measured(sumSeals() == 77) &&
+        unless(tbyte(REGION_PTR_ADDR) != prev(tbyte(REGION_PTR_ADDR))) &&
+        measured(sumSeals() == 77, when=inGame()) &&
         prev(sumSeals()) == 76
 
 bugContestPtrAddr = ptr(REGION_PTR_ADDR,[0x00,0xc28f8,0x118],acc_addr)
@@ -13277,8 +13290,7 @@ function achEffortRibbion() => inGame() &&
 function voltorbPtr() => dword(heap(HEAP_ID_VOLTORB) + 0x26c)
 
 function inVoltorbMinigame() => currMapID() == MAP_GOLDENROD_GAME_CORNER &&
-        heapIndex(HEAP_ID_VOLTORB) != 0 && 
-        heapIndex(HEAP_ID_VOLTORB) != 0xff
+        isHeapActive(HEAP_ID_VOLTORB)
 
 ROUND_OUTCOME_NONE = 0 
 ROUND_OUTCOME_QUIT = 1
@@ -13297,6 +13309,21 @@ function achVoltorbLevelBeat(level) => inGame() &&
 function achHallOfFame() => currentOverlayID(0) == OV_HALLOFFAME &&
         has_changed(currentOverlayID(0)) &&
         currMapID() == MAP_POKEMON_LEAGUE_HALL_OF_FAME
+
+function achHerbShop() => inGame() &&
+        has_decreased(money()) &&
+        posY() <= 31 &&
+        posY() >= 25
+
+function achClairLanceDoubleBattle() => inGame() &&
+        var(VAR_UNK_40FC) == 2 &&
+        prev(var(VAR_UNK_40FC)) == 1 &&
+        currMapID() == MAP_DRAGONS_DEN
+
+function achDiamondDust() => inGame() &&
+        currMapID() == 465 &&
+        currWeather() == WEATHER_DIAMOND_DUST &&
+        has_changed(currWeather())
 
 GenderLookup = {
     0: "♂",
@@ -13417,13 +13444,6 @@ rich_presence_display("Loading...")
 
 
 achs_reg = [
-    //["_test","name rival",0,achFlagInMap(FLAG_GAVE_RIVAL_NAME_TO_OFFICER,MAP_NEW_BARK_ELMS_LAB_1F)],
-    //["test_trainer","",0,battleTrainer() == 0x111],
-    //["test_trainer2","",0,heapIndex(5) == 0x6],
-    //["test_trainer3","",0,dword(heap(5)) == 0x6],
-    //["test_battlemon_species","",0,battleMonSpecies(0) == 0x6],
-    ["test","",0,currentOverlayID(0) == OV_BATTLE],
-
 ["Rock Smash","Defeat Brock and earn the Boulder Badge",5,achKantoBadgeObtained(BADGE_BOULDER)],
 ["Fishing Trip","Defeat Misty and earn the Cascade Badge",5,achKantoBadgeObtained(BADGE_CASCADE)],
 ["The Badge of a Lieutenant","Defeat Lt. Surge and earn the Thunder Badge",5,achKantoBadgeObtained(BADGE_THUNDER)],
@@ -13621,7 +13641,7 @@ MAP_ROUTE_9, // Route 9 / R09 [ev14]
 MAP_ROUTE_10_SOUTH, // Route 10 / R10R0101 [ev345]
 MAP_ROUTE_10, // Route 10 / R10
 ])],
-["The Mysterious Blue Ground Nuggets","Find every item and hidden item in Cerulean City, Cerulean Cave, Route 24, and Route 25",3,achItemsFound([
+["The Mysterious Blue Ground Nuggets","Find every item and hidden item in Cerulean City, Route 24, and Route 25",3,achItemsFound([
 MAP_CERULEAN, // Cerulean City / T04
 MAP_ROUTE_25, // Route 25 / R25 [ev26]
 ])],
@@ -13749,8 +13769,8 @@ MAP_CERULEAN_CAVE_B1F, // Cerulean Cave / D03R0103 [ev406]
 ["Letting You Go So You Can Grow, Pal","Trade a Haunter for a Xatu in Pewter City",2,achFlagAnyMap(FLAG_TRADE_PEWTER_CITY_HAUNTER_XATU)],
 ["From Raw Dirt to Refined Metal","Trade a Dugtrio for a Magneton in the Power Plant on Route 10",2,achFlagAnyMap(FLAG_TRADE_POWER_PLANT_DUGTRIO_MAGNETON)],
 ["Pikaswap","Trade a Pikachu for a Pikachu to Lt. Surge in the Saffron City Magnet Train Station",3,achFlagAnyMap(FLAG_TRADE_LT_SURGE_PIKACHU)],
-["With Some Silph Co. Stocks, Please","Forretress for a Beldum to Steven in the lobby of Silph Co.",3,achFlagAnyMap(FLAG_TRADE_STEVEN_FORRETRESS_BELDUM)],
-["Rock Collectors Sharing","Bonsly for a Rhyhorn to Brock in Diglett's Cave on Saturday",3,achFlagAnyMap(FLAG_TRADE_BROCK_BONSLY_RHYHORN)],
+["With Some Silph Co. Stocks, Please","Trade a Forretress for a Beldum to Steven in the lobby of Silph Co.",3,achFlagAnyMap(FLAG_TRADE_STEVEN_FORRETRESS_BELDUM)],
+["Rock Collectors Sharing","Trade a Bonsly for a Rhyhorn to Brock in Diglett's Cave on Saturday",3,achFlagAnyMap(FLAG_TRADE_BROCK_BONSLY_RHYHORN)],
 ["Don't Mind If I Do!","Trade any Pokémon for a Steelix to Jasmine in her gym",3,achFlagAnyMap(FLAG_TRADE_JASMINE_STEELIX)],
 ["Look What I Found!","Show Lyra or Ethan a Pokemon who has found a Shiny Leaf",2,achFlagInMap(FLAG_SHOWED_FRIEND_A_SHINY_LEAF,MAP_NEW_BARK_RIVAL_HOUSE_2F)],
 ["Explored the World, On Foot","Have a Leaf Crown made by Lyra or Ethan after collecting 5 Shiny Leaves on a Pokémon",5,achShinyLeafCrown()],
@@ -13772,18 +13792,8 @@ MAP_CERULEAN_CAVE_B1F, // Cerulean Cave / D03R0103 [ev406]
 // Receive a Pokeball made from Apricorns from Kurt in Azalea Town
 // Obtain all 5 items from Bill's Grandfather on Route 25 after showing him specific Pokémon
     // VAR_UNK_412D?
-// Make a purchase at the Herb Shop in the Goldenrod Tunnel on Saturday or Sunday
-    /* Money decrease while in map and position check */
-// Purchase every item from the Bargain Shop in the Goldenrod Tunnel on Monday morning
-    /* 
-        Map check +
-
-        VAR_TEMP_x4003
-        VAR_TEMP_x4004
-        VAR_TEMP_x4005
-        VAR_TEMP_x4006
-        VAR_TEMP_x4007
-    */
+["Weekend Dealings","Make a purchase at the Herb Shop in the Goldenrod Tunnel on Saturday or Sunday",1,achHerbShop()],
+["Won't Be There Tomorrow, Buy Now!","Purchase every item from the Bargain Shop in the Goldenrod Tunnel on Monday morning",2,achVarGroupNonZero([VAR_TEMP_x4003,VAR_TEMP_x4004,VAR_TEMP_x4005,VAR_TEMP_x4006,VAR_TEMP_x4007]) && currMapID() == MAP_GOLDENROD_TUNNEL_B1F],
 ["Fresh Look","Have one of the Haircut Brothers give your Pokémon a haircut in the Goldenrod Tunnel",2,achFlagInMap(FLAG_DAILY_GOT_HAIRCUT,MAP_GOLDENROD_TUNNEL_B1F)],
 // 
 ["What a Catch!","Obtain an Ether after showing the Fishing Guru a large Magikarp at the Lake of Rage",3,achMagikarpRecord()],
@@ -13809,20 +13819,17 @@ MAP_CERULEAN_CAVE_B1F, // Cerulean Cave / D03R0103 [ev406]
 ["All Natural","Obtain TM83 Natural Gift from the Moomoo Farm's owner's wife after healing Moomoo",2,achFlagAnyMap(FLAG_GOT_TM83_FROM_MOOMOO_FARM_WOMAN)],
 ["Sleep Tight","Obtain TM85 Dream Eater from a man in Viridian City",2,achFlagAnyMap(FLAG_GOT_TM85_FROM_VIRIDIAN_CITY_MAN)],
 ["Goodie Detector","Obtain the Dowsing MCHN in Ecruteak City",2,achFlagAnyMap(FLAG_GOT_DOWSING_MACHINE)],
-// Obtain an Exp. Share from Mr. Pokémon in exchange for the Red Scale
+["The Wise Pokémon Learns from the Mistakes of Others","Obtain an Exp. Share from Mr. Pokémon in exchange for the Red Scale",2,achFlagInMap(FLAG_EXCHANGED_RED_SCALE, MAP_ROUTE_30_MR_POKEMON_HOUSE)],
 ["Speed on Wheels","Obtain a Bicycle in Goldenrod City",5,achFlagAnyMap(FLAG_GOT_BIKE)],
-// Obtain a Pass to board the Magnet Train in Saffron City
+["Right On Tracks","Obtain a Pass to board the Magnet Train in Saffron City",2,achFlagDisableInMap(FLAG_HIDE_SAFFRON_CITY_COPYCAT_HOUSE_CLEFAIRY_DOLL, MAP_SAFFRON_COPYCAT_HOUSE_2F)],
 ["Ocean Sampler","Obtain all 3 fishing rods",3,achRods()],
 ["A Rare Sight","Catch or defeat a Lapras in Union Cave on Friday",0,achPkmnCaughtOrDefeated(131) && currMapID() == MAP_UNION_CAVE_B2F],
     // (FLAG_HIDE_UNION_CAVE_LAPRAS?)
-// Witness the Clefairy dance at Mt. Moon on Monday night or Tuesday morning
-    // HGSS| a var?
-// Defeat Clair and Lance in a double battle at the Dragon's Den
-    // HGSS| a flag?
+["Blessings from the Moon","Witness the Clefairy dance at Mt. Moon on Monday night or Tuesday morning",2,achVarChange(VAR_SCENE_CLEFAIRY_DANCE,0,1)],
+["Taking Down a Pair of Legends","Defeat Clair and Lance in a double battle at the Dragon's Den",5,achClairLanceDoubleBattle()],
 ["Right Place, Right Time","Obtain every item from the Week Siblings",5,achFlagGroup(GROUP_FLAG_WEEKSIBLINGS)],
 // Defeat your rival at the Indigo Plateau on Monday or Wednesday
-// Witness Diamond Dust on Mt. Silver on a special day
-    // LocalFieldData->weather = 8
+["No Hail Tonight","Witness Diamond Dust on Mt. Silver on a special day",5,achDiamondDust()],
 ["Making Bank","Have your Pay Day earnings doubled with an Amulet Coin or Luck Incense",5,achPayDayAmulet()],
 // Land a Pokémon while fishing with a lead Pokémon whose ability is Sticky Hold or Suction Cups
 // Interact with your starter on Victory Road
@@ -13855,7 +13862,6 @@ for a in achs_reg ach(a,"")
 for a in achs_prog ach(a,"progression")
 for a in achs_win ach(a,"win_condition")
 for a in achs_missable ach(a,"missable")
-
 
 leaderboard(
     title = "Bug Contest",
