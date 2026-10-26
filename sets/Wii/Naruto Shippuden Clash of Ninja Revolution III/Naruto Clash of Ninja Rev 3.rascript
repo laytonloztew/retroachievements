@@ -77,6 +77,7 @@ class Region {
             "hp_change": dword_be(addr + 0x2c),
             "max_chakra": dword_be(addr + 0x40),
             "curr_chakra": dword_be(addr + 0x44),
+            "debuff_flags_addr": addr + 0x6b,
             "target_char_index": dword_be(addr + 0xac),
             "act_id": dword_be(addr + 0x140),
             "last_act_id": dword_be(addr + 0x144),
@@ -96,11 +97,11 @@ class Region {
     function charHP(b) => this.char(b)["curr_hp"]
     function charIsSubCharacter(b) => this.char(b)["player_index"] == -1
     function charIsHuman(b) => this.charIsActive(b) && !this.charIsSubCharacter(b) && this.playerCharacterIsHuman(this.char(b)["player_index"])
-    
-    
+
     function charTargetID(b) => ptr(this.char(b)["target_ptr"], [0x18])
     function charTargetTransformStatus(b) => ptr(this.char(b)["target_ptr"], [0x164c])
     function charTargetHP(b) => ptr(this.char(b)["target_ptr"], [0x28])
+    function charTargetIsHirukoTimePoisoned(b) => bit(5,ptr(this.char(b)["target_ptr"], [0x6b], acc_addr)) == 1
 
     function charHitID(b) => ptr(this.char(b)["hit_enemy_ptr"], [0x18])
     function charHitHP(b) => ptr(this.char(b)["hit_enemy_ptr"], [0x28])
@@ -1316,6 +1317,9 @@ function achSumUnlocks(group) => any_of(REGIONS, r =>
             r.currentSeqIs("menu/extra/shop")
         ) 
 
+
+// Unlock when player is hidan and use down special at low HP while in circle to kill opponent who has high hp
+// trigger appears when opponent HP is above threshold, not when attack is ready to do enough damage
 function achHidanInstantKill() => any_of(REGIONS, r =>
             r.isRegion() &&
             r.seqActive() &&
@@ -1324,29 +1328,60 @@ function achHidanInstantKill() => any_of(REGIONS, r =>
                 r.charIsAlive(b) &&
                 r.charIsHuman(b) && 
                 r.char(b)["character_id"] == CHARACTER_HIDAN &&
-                r.char(b)["hit_enemy_ptr"] != 0 &&
-                r.char(b)["act_id"] == 258 &&
+                trigger_when(r.char(b)["hit_enemy_ptr"] != 0) &&
+                trigger_when(r.char(b)["act_id"] == 258) &&
+
+                //account for different character max hp's
                 (
                     (
                         r.charHitID(b) != CHARACTER_CHIYO &&
                         r.charHitID(b) != CHARACTER_KANKURO &&
-                        r.charHitHP(b) == 0 &&
+                        trigger_when(r.charHitHP(b) == 0) &&
                         prev(r.charTargetHP(b)) >= 8000
                     ) ||
                     (
                         r.charHitID(b) == CHARACTER_CHIYO &&
-                        r.charHitHP(b) == 0 &&
+                        trigger_when(r.charHitHP(b) == 0) &&
                         prev(r.charTargetHP(b)) >= 6400
                     ) ||
                     (
                         r.charHitID(b) == CHARACTER_KANKURO &&
-                        r.charHitHP(b) == 0 &&
+                        trigger_when(r.charHitHP(b) == 0) &&
                         prev(r.charTargetHP(b)) >= 7200
                     )
                 )
             )
         )
 
+// Unlock when round timer hits 0 while in a 1v1 match and player is hiruko, Hiruko's time poison is active on target, 
+// and player hp greater than target hp
+// trigger should appear after using the hiruko poison (usable at low HP, back special)
+function achHirukoRoundTimeoutWin() => any_of(REGIONS, r =>
+            r.isRegion() &&
+            r.seqActive() &&
+            r.inBattle() &&
+            __ornext(
+                r.currentMode() == MODE_SINGLE_VS ||
+                r.currentMode() == MODE_SINGLE_SCORE ||
+                r.currentMode() == MODE_SINGLE_SURVIVAL ||
+                r.currentMode() == MODE_SINGLE_TIME ||
+                r.currentMode() == MODE_SINGLE_VS_TWO ||
+                r.currentMode() == MODE_MULTI_2PLAYER_VS
+            ) &&
+            trigger_when(r.matchTimer() <= 1) &&
+            trigger_when(has_decreased(r.matchTimer())) && 
+            any_of(BATTLERS, b => 
+                r.charIsAlive(b) &&
+                r.charIsHuman(b) && 
+                r.char(b)["character_id"] == CHARACTER_HIRUKO &&
+                r.char(b)["hit_enemy_ptr"] != 0 &&
+                prev(r.charTargetHP(b)) - prev(r.charHP(b)) > 0 &&
+                prev(r.charTargetHP(b)) - prev(r.charHP(b)) < 0x70000000 &&
+                r.charTargetIsHirukoTimePoisoned(b)
+            )
+        )
+
+// Chapter flag is set after the first fight, need different logic to detect end of fight with Guy vs Kisame
 function achChapterTwo() => any_of(REGIONS, r =>
             r.isRegion() &&
             r.seqActive() &&
@@ -1355,28 +1390,6 @@ function achChapterTwo() => any_of(REGIONS, r =>
             r.playerWonRound(0) &&
             r.char(0)["character_id"] == CHARACTER_GUY
 )
-
-function achHirukoRoundTimeoutWin() => any_of(REGIONS, r =>
-            r.isRegion() &&
-            r.seqActive() &&
-            r.inBattle() &&
-            __ornext(
-                r.currentMode() == MODE_SINGLE_SCORE ||
-                r.currentMode() == MODE_SINGLE_SURVIVAL ||
-                r.currentMode() == MODE_SINGLE_TIME ||
-                r.currentMode() == MODE_SINGLE_VS_TWO ||
-                r.currentMode() == MODE_MULTI_2PLAYER_VS
-            ) &&
-            r.matchTimer() <= 1 &&
-            has_decreased(r.matchTimer()) && 
-            any_of(BATTLERS, b => 
-                r.charIsAlive(b) &&
-                r.charIsHuman(b) && 
-                r.char(b)["character_id"] == CHARACTER_HIRUKO &&
-                r.char(b)["hit_enemy_ptr"] != 0 &&
-                r.charTargetHP(b) > r.charHP(b) 
-            )
-        )
 
 AchTitlesMissions = {
     CHARACTER_NARUTO: "Naruto, the Child",
