@@ -57,6 +57,10 @@ class Region {
 
     function char(i) => this.CharacterState(i)
     function char_ptr(i) => dword_be(this.addr_character_ptr_start + (i * 8))
+    function pauseState() => dword_be(this.addr_character_ptr_start + 0x36c)
+
+    function actPaused() => this.pauseState() == 1 && has_changed(this.pauseState())
+    function actUnpaused() => this.pauseState() != 1 && prev(this.pauseState()) == 1
 
     function CharacterState(i) {
         addr = this.char_ptr(i) & RA_MASK
@@ -177,7 +181,6 @@ class Region {
                                     )
 
     function playerWonRound(i) => has_increased(this.match_team_wins(i))
-    function training_state() => word_be(this.addr_match_state_ptr - 0x0a)
 
     function storyChapter() => dword_be(this.addr_match_state_ptr + 0x20) 
 
@@ -202,6 +205,8 @@ class Region {
     function combo_counter(i) {
         return once(this.char(0)["curr_combo"] >= i)
     }
+
+    function comboIncreased() => has_increased(this.char(0)["curr_combo"])
 
     function kumiteLevel() => dword_be(this.addr_kumite_level)
     function kumiteOppsDefeated() => dword_be(this.addr_kumite_level + 0x18)
@@ -1613,14 +1618,21 @@ for char_id in CharacterLookup {
         title = format("Single Training - {0}",char_name),
         description = "Highest Combo",
         start = any_of(REGIONS, r => unless(!r.isRegion()) && r.currentMode() == MODE_TRAINING &&
-                r.isStartingMatch() &&
+                (r.isStartingMatch() || r.actUnpaused()) &&
                 r.charIsActive(0) &&
                 r.char(0)["character_id"] == char_id ),
         cancel = any_of(REGIONS, r => unless(!r.isRegion()) && !prev(r.inBattle()) ),
-        submit = any_of(REGIONS, r => unless(!r.isRegion()) && once(r.char(0)["curr_combo"] == 1 && r.inBattle() && r.currentMode() == MODE_TRAINING && r.char(0)["character_id"] == char_id) && r.training_state() == 7 && prev(r.training_state()) == 6),
+        submit = any_of(REGIONS, r => 
+            unless(!r.isRegion()) && 
+            once(r.char(0)["curr_combo"] == 1 &&
+            r.inBattle() && 
+            r.currentMode() == MODE_TRAINING && 
+            r.char(0)["character_id"] == char_id) && 
+            !r.inBattle()
+        ),
         value = 
             max_of(
-        array_map(REGIONS, r => measured(tally_of(range(1,99),1,r.combo_counter), when=r.isRegion() && __ornext(r.matchStateIs(MATCH_STATE_BATTLE) || r.matchStateIs(MATCH_STATE_TRANSITION)) && r.charIsActive(0) && r.char(0)["character_id"] == char_id ))
+        array_map(REGIONS, r => measured(tally_of(range(1,99),1,r.combo_counter), when=r.isRegion() && __ornext(r.matchStateIs(MATCH_STATE_BATTLE) || r.matchStateIs(MATCH_STATE_TRANSITION)) && r.charIsActive(0) && r.char(0)["character_id"] == char_id ) /*&& never(prev(r.pauseState()) == 1)*/)
     ),
         format = "VALUE"
     )
