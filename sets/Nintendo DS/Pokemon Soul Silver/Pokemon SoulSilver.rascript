@@ -3560,7 +3560,7 @@ VAR_TEMP_x4000 = 0x4000
     VAR_UNK_40DA = 0x40DA
     VAR_UNK_40DB = 0x40DB
     VAR_UNK_40DC = 0x40DC
-    VAR_UNK_40DD = 0x40DD
+    VAR_UNK_40DD = 0x40DD //RUINS_ALPH_PUZZLE_ONE
     VAR_UNK_40DE = 0x40DE
     VAR_UNK_40DF = 0x40DF
     VAR_UNK_40E0 = 0x40E0
@@ -13325,6 +13325,25 @@ function achDiamondDust() => inGame() &&
         currWeather() == WEATHER_DIAMOND_DUST &&
         has_changed(currWeather())
 
+function sumAlphPuzzles() => var(VAR_UNK_40DD) / var(VAR_UNK_40DD) +
+        var(VAR_UNK_40DE) / var(VAR_UNK_40DE) +
+        var(VAR_UNK_40DF) / var(VAR_UNK_40DF) +
+        var(VAR_UNK_40E0) / var(VAR_UNK_40E0) +
+        //flag(FLAG_UNK_219) + 
+        flag(FLAG_OPENED_ALPH_ESCAPE_ROPE_SECRET_ROOM) +
+        flag(FLAG_OPENED_ALPH_FLASH_SECRET_ROOM) +
+        flag(FLAG_OPENED_ALPH_WATER_STONE_SECRET_ROOM) +
+        flag(FLAG_OPENED_ALPH_HO_OH_SECRET_ROOM)
+
+function achRuinsAlphPuzzles() => inGame() &&
+        measured(sumAlphPuzzles() == 8, when=inGame()) &&
+        prev(sumAlphPuzzles()) == 7
+        
+function achUnownReport() => inGame() &&
+        currMapID() == MAP_RUINS_OF_ALPH_RESEARCH_CENTER &&
+        measured(var(VAR_UNOWN_REPORT_LEVEL) == 8, when=inGame()) &&
+        prev(var(VAR_UNOWN_REPORT_LEVEL)) == 7
+
 GenderLookup = {
     0: "♂",
     1: "♀"
@@ -13775,19 +13794,8 @@ MAP_CERULEAN_CAVE_B1F, // Cerulean Cave / D03R0103 [ev406]
 ["Look What I Found!","Show Lyra or Ethan a Pokemon who has found a Shiny Leaf",2,achFlagInMap(FLAG_SHOWED_FRIEND_A_SHINY_LEAF,MAP_NEW_BARK_RIVAL_HOUSE_2F)],
 ["Explored the World, On Foot","Have a Leaf Crown made by Lyra or Ethan after collecting 5 Shiny Leaves on a Pokémon",5,achShinyLeafCrown()],
 // Obtain a Stick from a wild Farfetch'd
-// Solve all eight puzzles of the Ruins of Alph
-    // HGSS| sum 8 flags - kabuto, aero, omanyte, hooh puzzle, escape, light, water, hooh
-    /* 
-    VAR_UNK_40DD	(bit0)
-    VAR_UNK_40DE	(bit0)
-    VAR_UNK_40DF	(bit0)
-    VAR_UNK_40E0	(bit0)
-    FLAG_UNK_219	(bit0)
-    FLAG_OPENED_ALPH_ESCAPE_ROPE_SECRET_ROOM
-    FLAG_OPENED_ALPH_FLASH_SECRET_ROOM
-    FLAG_OPENED_ALPH_HO_OH_SECRET_ROOM
-    */
-// Complete every page of the Unown Report
+["Ancient Enigma","Solve all eight puzzles of the Ruins of Alph",3,achRuinsAlphPuzzles()],
+["Archeologist Extraordinaire","Complete every page of the Unown Report",5,achUnownReport()],
 // Receive three berries in exchange for a colored shard from the Juggler in Violet City
 // Receive a Pokeball made from Apricorns from Kurt in Azalea Town
 // Obtain all 5 items from Bill's Grandfather on Route 25 after showing him specific Pokémon
