@@ -98,6 +98,7 @@ OV_HALLOFFAME = 63
 OV_MAINMENU = 74
 OV_WIIMESSAGE = 75
 OV_CREDITS = 76
+OV_CARDSCRATCH = 87
 OV_POKEGEAR = 100
 OV_MAP = 101 //FLY
 OV_MAILBOX = 103
@@ -190,7 +191,7 @@ function battleMonGender(i) => low4(battleMonAddr(i) + 0x7e)
 
 function achTrainerDefeated(trainer_ids) => inBattle() && isTrainerBattle() && battleWon() && any_of(trainer_ids, t => 
             battleTrainer() == t
-        )
+        ) && __ornext(currMapID() < MAP_BATTLE_TOWER || currMapID() > MAP_BATTLE_TOWER_PARTNER_ROOM)
 
 function achPayDayAmulet() => inBattle() && has_increased(paydayCount()) && prizeMoneyValue() == 2
 
@@ -3640,7 +3641,7 @@ VAR_TEMP_x4000 = 0x4000
     VAR_UNK_412A = 0x412A
     VAR_UNK_412B = 0x412B
     VAR_UNK_412C = 0x412C
-    VAR_UNK_412D = 0x412D
+    VAR_BILL_SHOWN_PKMN_COUNTER = 0x412D
     VAR_UNK_412E = 0x412E
     VAR_UNK_412F = 0x412F
     VAR_UNK_4130 = 0x4130
@@ -3845,7 +3846,7 @@ FLAG_MAPTEMP_001 = 0x1
     FLAG_GAVE_RIVAL_NAME_TO_OFFICER = 0x79
     FLAG_GOT_KINGS_ROCK_FROM_SLOWPOKE_WELL_MAN = 0x7A
     FLAG_BEAT_AZALEA_ROCKETS = 0x7B
-    FLAG_UNK_07C = 0x7C
+    FLAG_KURT_CAN_MAKE_BALLS = 0x7C
     FLAG_FOUND_FIRST_FARFETCHD = 0x7D
     FLAG_FOUND_SECOND_FARFETCHD = 0x7E
     FLAG_GOT_TM89_FROM_BUGSY = 0x7F
@@ -13245,6 +13246,10 @@ function achSeals() => unless(!inGame()) &&
 
 bugContestPtrAddr = ptr(REGION_PTR_ADDR,[0x00,0xc28f8,0x118],acc_addr)
 
+function isScriptActive() => currentOverlayID(0) == OV_FIELD && ptr(REGION_PTR_ADDR,[0x00,0xc28f8,0x10],tbyte) != 0 && ptr(REGION_PTR_ADDR,[0x00,0xc28f8,0x10,0x0c],tbyte) != 0
+function activeScriptNumber() => ptr(REGION_PTR_ADDR,[0x00,0xc28f8,0x10,0x0c,0x0a],word)
+function specialVar(i) => ptr(REGION_PTR_ADDR,[0x00,0xc28f8,0x10,0x0c,0x8c + (i * 2)],word)
+
 function bugContestScore(i) => ptr(bugContestPtrAddr,[0x00,0x72 + (0x0c * i)],word)
 
 function achWonBugContest() => bugContestDone() && 
@@ -13344,6 +13349,105 @@ function achUnownReport() => inGame() &&
         measured(var(VAR_UNOWN_REPORT_LEVEL) == 8, when=inGame()) &&
         prev(var(VAR_UNOWN_REPORT_LEVEL)) == 7
 
+/*
+Function 41:
+	SetVarFromVariable 0x8004 0x8003
+	SetVar 0x8005 1
+	CheckItemSpace 0x8004 0x8005 0x800C
+    ...
+*/
+function achLotteryPrize() => inGame() &&
+        currMapID() == MAP_GOLDENROD_RADIO_TOWER_1F && //D23R0101
+        isScriptActive() &&
+        activeScriptNumber() == 2 &&
+        specialVar(5) == 1 &&
+        prev(specialVar(5)) == 0
+
+function achFrontierCardScratch() => inGame() &&
+        currMapID() == MAP_BATTLE_FRONTIER &&
+        isScriptActive() &&
+        activeScriptNumber() == 10490 &&
+        specialVar(0) > 0 &&
+        prev(specialVar(0)) == 0
+
+function achHM06() => inGame() &&
+        currMapID() == MAP_ROUTE_36 &&
+        isScriptActive() &&
+        activeScriptNumber() == 9 &&
+        specialVar(4) == 0x1a9 &&
+        prev(specialVar(4)) == 0
+
+function achBerryTrader() => inGame() &&
+        currMapID() == MAP_VIOLET &&
+        isScriptActive() &&
+        activeScriptNumber() == 4 &&
+        specialVar(5) > 0 &&
+        prev(specialVar(5)) == 0
+
+function achKurtBalls() => inGame() &&
+        flag(FLAG_KURT_CAN_MAKE_BALLS) == 1 &&
+        currMapID() == MAP_AZALEA_KURT_HOUSE &&
+        isScriptActive() &&
+        activeScriptNumber() == 2 &&
+        specialVar(5) > 0 &&
+        prev(specialVar(5)) == 0
+
+function achCaughtSnorlax() => inGame() &&
+        has_increased(flag(FLAG_CAUGHT_SNORLAX)) &&
+        __ornext(
+            currMapID() == MAP_ROUTE_11 ||
+            currMapID() == MAP_ROUTE_12
+        )
+
+function achWakeSnorlax() => inGame() &&
+        currMapID() == MAP_ROUTE_11 &&
+        isScriptActive() &&
+        activeScriptNumber() == 1 &&
+        flag(FLAG_ENGAGING_STATIC_POKEMON) == 1 &&
+        prev(flag(FLAG_ENGAGING_STATIC_POKEMON)) == 0
+
+function achUnionLapras() => inGame() &&
+        currMapID() == MAP_UNION_CAVE_B2F &&
+        isScriptActive() &&
+        activeScriptNumber() == 1 &&
+        flag(FLAG_ENGAGING_STATIC_POKEMON) == 1 &&
+        prev(flag(FLAG_ENGAGING_STATIC_POKEMON)) == 0
+
+function achKantoStarter() => inGame() &&
+        currMapID() == MAP_PALLET_TOWN_OAKS_LAB &&
+        isScriptActive() &&
+        activeScriptNumber() >= 8 &&
+        activeScriptNumber() <= 10 &&
+        __ornext(
+            has_increased(flag(FLAG_HIDE_OAKS_LAB_BULBASAUR_BALL)) || 
+            has_increased(flag(FLAG_HIDE_OAKS_LAB_SQUIRTLE_BALL)) || 
+            has_increased(flag(FLAG_HIDE_OAKS_LAB_CHARMANDER_BALL)) 
+        )
+
+function battleTowerActive() => ptr(REGION_PTR_ADDR,[0x00,0xc28f8],dword) != 0 && ptr(REGION_PTR_ADDR,[0x00,0xc28f8,0xa0],dword) != 0
+function battleTowerStreak() => ptr(REGION_PTR_ADDR,[0x00,0xc28f8,0xa0,0x0d],byte)
+function battleTowerBattleInSession() => ptr(REGION_PTR_ADDR,[0x00,0xc28f8,0xa0,0x1a],word)
+function battleTowerTotalStreak() => battleTowerStreak() + battleTowerBattleInSession()
+
+function achBattleTowerStreakAmt(i) => inGame() &&
+        battleTowerActive() &&
+        currMapID() >= MAP_BATTLE_TOWER && currMapID() <= MAP_BATTLE_TOWER_PARTNER_ROOM &&
+        battleTowerTotalStreak() >= i &&
+        prev(battleTowerTotalStreak()) < i &&
+        prev(battleTowerTotalStreak()) > (i - 10)
+
+function achBuenaPassword() => inGame() &&
+        currMapID() == MAP_GOLDENROD_RADIO_TOWER_2F &&
+        var(VAR_BLUE_CARD_POINTS) == 0x1e &&
+        prev(var(VAR_BLUE_CARD_POINTS)) == 0x1d
+
+function achBillGrandfatherPkmn() => unless(!inGame()) &&
+        unless(save_ptr() != prev(save_ptr())) &&
+        unless(tbyte(REGION_PTR_ADDR) != prev(tbyte(REGION_PTR_ADDR))) &&
+        currMapID() == MAP_ROUTE_25_SEA_COTTAGE &&
+        measured(var(VAR_BILL_SHOWN_PKMN_COUNTER) == 5, when=inGame()) &&
+        prev(var(VAR_BILL_SHOWN_PKMN_COUNTER)) == 4
+
 GenderLookup = {
     0: "♂",
     1: "♀"
@@ -13369,7 +13473,48 @@ rich_presence_conditional_display(inGame() && isActiveOverlay(0) && currentOverl
 rich_presence_conditional_display(inGame() && isActiveOverlay(0) && currentOverlayID(0) == OV_WIIMESSAGE,"Viewing Wii Message")
 rich_presence_conditional_display(inGame() && isActiveOverlay(0) && currentOverlayID(0) == OV_WIFISETTINGS,"Viewing Wifi Settings")
 
-// Trainer Battle - Double //TODO: test with Dragon's Den double battle
+// Trainer Battle - Double
+rich_presence_conditional_display(inGame() && isActiveOverlay(0) && currMapID() >= MAP_BATTLE_TOWER && currMapID() <= MAP_BATTLE_TOWER_PARTNER_ROOM && currentOverlayID(0) == OV_BATTLE && isTrainerBattle() && isDoubleBattle(),"⚔️{2} {6}Lv{4}, {13} {14}Lv{15} vs Battler's {3} {7}Lv{5}, {16} {17}Lv{18} 🗺️{1} 🎖️{8} 🔴{10} 👁️{11} 🕒{9}",
+    rp_battle_trainer,
+    rp_field_map,
+    rp_battle_species(0),
+    rp_battle_species(1),
+    rp_battle_level(0),
+    rp_battle_level(1),
+    rp_battle_gender(0),
+    rp_battle_gender(1),
+    rp_num_badges,
+    rp_playtime,
+    rp_pkmn_caught_total,
+    rp_pkmn_seen_total,
+    rp_battle_trainer_s,
+    rp_battle_species(2),
+    rp_battle_gender(2),
+    rp_battle_level(2),
+    rp_battle_species(3),
+    rp_battle_gender(3),
+    rp_battle_level(3)
+)
+
+
+// Trainer Battle - Single
+rich_presence_conditional_display(inGame() && isActiveOverlay(0) && currMapID() >= MAP_BATTLE_TOWER && currMapID() <= MAP_BATTLE_TOWER_PARTNER_ROOM && currentOverlayID(0) == OV_BATTLE && isTrainerBattle(),"⚔️{2} {6}Lv{4} vs Battler's {3} {7}Lv{5} 🗺️{1} 🎖️{8} 🔴{10} 👁️{11} 🕒{9}",
+    rp_battle_trainer,
+    rp_field_map,
+    rp_battle_species(0),
+    rp_battle_species(1),
+    rp_battle_level(0),
+    rp_battle_level(1),
+    rp_battle_gender(0),
+    rp_battle_gender(1),
+    rp_num_badges,
+    rp_playtime,
+    rp_pkmn_caught_total,
+    rp_pkmn_seen_total,
+    rp_battle_trainer_s
+)
+
+// Trainer Battle - Double
 rich_presence_conditional_display(inGame() && isActiveOverlay(0) && currentOverlayID(0) == OV_BATTLE && isTrainerBattle() && isDoubleBattle(),"⚔️{2} {6}Lv{4}, {13} {14}Lv{15} vs {0}'{12} {3} {7}Lv{5}, {16} {17}Lv{18} 🗺️{1} 🎖️{8} 🔴{10} 👁️{11} 🕒{9}",
     rp_battle_trainer,
     rp_field_map,
@@ -13461,7 +13606,6 @@ rich_presence_conditional_display(inGame(),"[unknown overlay] {0}",
 
 rich_presence_display("Loading...")
 
-
 achs_reg = [
 ["Rock Smash","Defeat Brock and earn the Boulder Badge",5,achKantoBadgeObtained(BADGE_BOULDER)],
 ["Fishing Trip","Defeat Misty and earn the Cascade Badge",5,achKantoBadgeObtained(BADGE_CASCADE)],
@@ -13483,8 +13627,7 @@ achs_reg = [
 ["Darach's Ultimate Team","Obtain the Gold Print in the Battle Castle",50,achGoldPrint(3) && inBattleCastle()],
 ["Arcade Star Dahlia Met and Defeated","Obtain the Silver Print in the Battle Arcade",25,achSilverPrint(4) && inBattleArcade()],
 ["Dahlia's Ultimate Team","Obtain the Gold Print in the Battle Arcade",50,achGoldPrint(4) && inBattleArcade()],
-// Reach a streak of 100 wins in the Battle Tower and obtain a Trainer Card star
-// Obtain every Gym Leader's Pokegear number
+["Frontier Legend","Reach a streak of 100 wins in the Battle Tower and obtain a Trainer Card star",50,achBattleTowerStreakAmt(100)],
 ["Local Connoisseur","Catch all 221 Pokémon in the Johto Pokedex without events or external trades",50,achPokemonCaughtGroup(PKMN_GROUP_JOHTO, 221)],
 ["Gotta Catch 'Em All - SoulSilver Edition","Catch all 371 Pokémon in the National Pokedex without events or external trades",50,achPokemonCaughtGroup(PKMN_GROUP_NATIONAL, 371)],
 ["Hard-Headed","Catch all Pokémon that can be found by Headbutting trees",5,achPokemonCaughtGroup(PKMN_GROUP_HEADBUTT, length(PKMN_GROUP_HEADBUTT))],
@@ -13776,10 +13919,8 @@ MAP_CERULEAN_CAVE_B1F, // Cerulean Cave / D03R0103 [ev406]
 ["Young and Still Able to Become Anything","Receive an Eevee from Bill at his house in Goldenrod City",3,achFlagAnyMap(FLAG_GOT_EEVEE_FROM_BILL)],
 ["The Hardest Rock Around","Receive Shuckie the Shuckle as a gift from a trainer in Cianwood City",2,achFlagInMap(FLAG_GOT_LOAN_SHUCKLE, MAP_CIANWOOD_KIRKS_HOUSE)],
 ["Martial Initiate","Receive a Tyrogue from the Karate King in Mt. Mortar",3,achFlagAnyMap(FLAG_GOT_TYROGUE_FROM_KARATE_KING)],
-// Receive a Dratini from the elders in the Dragon's Den
-    // FLAG_GOT_DRATINI_FROM_MASTER_JUST_NOW / FLAG_GOT_DRATINI_FROM_MASTER_LONG_AGO
-// Obtain a Bulbasaur, Charmander, or Squirtle from Professor Oak after defeating Red
-    // (FLAG_HIDE_OAKS_LAB_CHARMANDER_BALL/etc in oak's lab?)
+["Legends Start Small","Receive a Dratini from the elders in the Dragon's Den",2,achFlagInMap(FLAG_GOT_DRATINI_FROM_MASTER_JUST_NOW, MAP_DRAGONS_DEN_SHRINE)],
+["Kanto Square One","Obtain a Bulbasaur, Charmander, or Squirtle from Professor Oak after defeating Red",5,achKantoStarter()],
 ["Hoenn Square One","Obtain a Treecko, Torchic, or Mudkip from Steven in Silph Co. after defeating Red",5,achFlagAnyMap(FLAG_GOT_HOENN_STARTER_FROM_STEVEN)],
 ["Trading Up in Weight","Trade a Bellsprout for an Onix in Violet City",2,achFlagAnyMap(FLAG_TRADE_VIOLET_CITY_BELLSPROUT_ONIX)],
 ["Brains for Brawns","Trade a Drowzee for a Machop in the Goldenrod Department Store",2,achFlagAnyMap(FLAG_TRADE_GOLDENROD_CITY_DROWZEE_MACHOP)],
@@ -13796,25 +13937,22 @@ MAP_CERULEAN_CAVE_B1F, // Cerulean Cave / D03R0103 [ev406]
 // Obtain a Stick from a wild Farfetch'd
 ["Ancient Enigma","Solve all eight puzzles of the Ruins of Alph",3,achRuinsAlphPuzzles()],
 ["Archeologist Extraordinaire","Complete every page of the Unown Report",5,achUnownReport()],
-// Receive three berries in exchange for a colored shard from the Juggler in Violet City
-// Receive a Pokeball made from Apricorns from Kurt in Azalea Town
-// Obtain all 5 items from Bill's Grandfather on Route 25 after showing him specific Pokémon
-    // VAR_UNK_412D?
+["Midbattle Snacks","Receive three berries in exchange for a colored shard from the Juggler in Violet City",2,achBerryTrader()],
+["Nature and Technology","Receive a Pokeball made from Apricorns from Kurt in Azalea Town",2,achKurtBalls()],
+["Big Thanks Old Man","Obtain all 5 items from Bill's Grandfather on Route 25 after showing him specific Pokémon",5,achBillGrandfatherPkmn()],
 ["Weekend Dealings","Make a purchase at the Herb Shop in the Goldenrod Tunnel on Saturday or Sunday",1,achHerbShop()],
 ["Won't Be There Tomorrow, Buy Now!","Purchase every item from the Bargain Shop in the Goldenrod Tunnel on Monday morning",2,achVarGroupNonZero([VAR_TEMP_x4003,VAR_TEMP_x4004,VAR_TEMP_x4005,VAR_TEMP_x4006,VAR_TEMP_x4007]) && currMapID() == MAP_GOLDENROD_TUNNEL_B1F],
 ["Fresh Look","Have one of the Haircut Brothers give your Pokémon a haircut in the Goldenrod Tunnel",2,achFlagInMap(FLAG_DAILY_GOT_HAIRCUT,MAP_GOLDENROD_TUNNEL_B1F)],
-// 
 ["What a Catch!","Obtain an Ether after showing the Fishing Guru a large Magikarp at the Lake of Rage",3,achMagikarpRecord()],
 ["After School Makeover","Have Daisy groom one of your Pokémon at the Rival's house in Pallet Town between 3:00-3:59PM",2,achFlagInMap(FLAG_DAISY_MASSAGE, MAP_PALLET_TOWN_BLUES_HOUSE_1F)],
-// Win a prize at the Lottery Corner in the Goldenrod Radio Tower
-// Obtain Buena's Pokegear number after earning 30 points from her radio show
+["Winner Winner Chicken Dinner","Win a prize at the Lottery Corner in the Goldenrod Radio Tower",2,achLotteryPrize()],
+["Friends with the Radio crew","Obtain Buena's Pokegear number after earning 30 points from her radio show",10,achBuenaPassword()],
 ["You Fight Like a Dairy Farmer","Learn all the trendy phrases from the old man on Route 16",5,achTrendyWords()],
-// Win a prize by matching three of the same Pokémon on a Scratch-Off Card at the Battle Frontier
-// REMOVE? - Heal Moomoo the Miltank at Moomoo Farm
+["Perfect Match","Win a prize by matching three of the same Pokémon on a Scratch-Off Card at the Battle Frontier",3,achFrontierCardScratch()],
 ["Knocking on the Fourth Wall","Obtain GB Sounds from a Game Freak's Sound Designer in Celadon City",2,achGetKeyItem(0x1f6)],
     // TODO: add map id check
 ["Fortune Strikes Again and Again","Obtain Lucky Punch from showing a lady on Route 14 a Chansey",3,achFlagAnyMap(FLAG_GOT_LUCKY_PUNCH_FROM_ROUTE_14_WOMAN)],
-// Wake up the Snorlax on Route 11
+["Bothering the Local Wild Life Just Trying to Sleep","Wake up the Snorlax on Route 11",3,achWakeSnorlax()],
 ["No Pain No Gain","Obtain an Effort Ribbon from a woman in Blackthorn City",3,achEffortRibbion()],
 ["Return of the Technical Machines","Obtain TM27 Return from showing a lady in Goldenrod Department Store a high friendship Pokémon on Sunday",3,achFlagAnyMap(FLAG_GOT_TM27_FROM_DEPARTMENT_LADY)],
 ["Scary Roar","Obtain TM05 Roar from a man on Route 32",2,achFlagAnyMap(FLAG_GOT_TM05_FROM_ROUTE_32_MAN)],
@@ -13831,20 +13969,21 @@ MAP_CERULEAN_CAVE_B1F, // Cerulean Cave / D03R0103 [ev406]
 ["Speed on Wheels","Obtain a Bicycle in Goldenrod City",5,achFlagAnyMap(FLAG_GOT_BIKE)],
 ["Right On Tracks","Obtain a Pass to board the Magnet Train in Saffron City",2,achFlagDisableInMap(FLAG_HIDE_SAFFRON_CITY_COPYCAT_HOUSE_CLEFAIRY_DOLL, MAP_SAFFRON_COPYCAT_HOUSE_2F)],
 ["Ocean Sampler","Obtain all 3 fishing rods",3,achRods()],
-["A Rare Sight","Catch or defeat a Lapras in Union Cave on Friday",0,achPkmnCaughtOrDefeated(131) && currMapID() == MAP_UNION_CAVE_B2F],
-    // (FLAG_HIDE_UNION_CAVE_LAPRAS?)
+["A Rare Sight","Encounter a Lapras in Union Cave on Friday",2,achUnionLapras()],
 ["Blessings from the Moon","Witness the Clefairy dance at Mt. Moon on Monday night or Tuesday morning",2,achVarChange(VAR_SCENE_CLEFAIRY_DANCE,0,1)],
 ["Taking Down a Pair of Legends","Defeat Clair and Lance in a double battle at the Dragon's Den",5,achClairLanceDoubleBattle()],
 ["Right Place, Right Time","Obtain every item from the Week Siblings",5,achFlagGroup(GROUP_FLAG_WEEKSIBLINGS)],
-// Defeat your rival at the Indigo Plateau on Monday or Wednesday
+["Rematch at the Summit","Defeat your rival at the Indigo Plateau on Monday or Wednesday",5,achTrainerDefeated([TRAINER_RIVAL_SILVER_19,TRAINER_RIVAL_SILVER_20,TRAINER_RIVAL_SILVER_21])],
+
+
 ["No Hail Tonight","Witness Diamond Dust on Mt. Silver on a special day",5,achDiamondDust()],
 ["Making Bank","Have your Pay Day earnings doubled with an Amulet Coin or Luck Incense",5,achPayDayAmulet()],
 // Land a Pokémon while fishing with a lead Pokémon whose ability is Sticky Hold or Suction Cups
-// Interact with your starter on Victory Road
-// Interact with your Togepi in the Cerulean City Gym
-// Interact with one of your ghost type Pokémon in Lavender Town
 ["Brotlov","Complete level 5 in Voltorb Flip",10,achVoltorbLevelBeat(5)],
 
+
+//TODO: get approved via revision
+["Smashing Discovery","Obtain HM06 Rock Smash from a man on Route 36",2,achHM06()]
 ]
 
 achs_prog = [
