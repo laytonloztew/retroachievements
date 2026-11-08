@@ -46,6 +46,8 @@ function save_ptr() => ptr(REGION_PTR_ADDR,[0x00,0xC09C8],dword)
 
 function money() => dword(s(0x88))
 
+function coins() => word(s(0x94))
+
 johtoBadges_addr = s(0x8e)
 kantoBadges_addr = s(0x93)
 
@@ -177,9 +179,21 @@ function battleOutcome() => byte(heap(HEAP_ID_BATTLE) + 0x2440)
 function battleWon() => battleOutcome() == BATTLE_RESULT_WIN && prev(battleOutcome()) == BATTLE_IN_PROGRESS && isHeapActive(HEAP_ID_BATTLE)
 function battleCaught() => battleOutcome() == BATTLE_RESULT_CAPTURED_MON && prev(battleOutcome()) == BATTLE_IN_PROGRESS && isHeapActive(HEAP_ID_BATTLE)
 
-function battleTypeAddr() => heap(5) + 0x4C
-function isTrainerBattle() => bit(0,battleTypeAddr()) == 1
-function isDoubleBattle() => bit(1,battleTypeAddr()) == 1
+BATTLE_TYPE_TRAINER = 0
+BATTLE_TYPE_DOUBLES = 1
+BATTLE_TYPE_LINK = 2
+BATTLE_TYPE_MULTI = 3
+BATTLE_TYPE_TAG = 4
+BATTLE_TYPE_SAFARI = 5
+BATTLE_TYPE_AI = 6
+BATTLE_TYPE_FRONTIER = 7
+BATTLE_TYPE_ROAMER = 8
+BATTLE_TYPE_PAL_PARK = 9
+BATTLE_TYPE_TUTORIAL = 10
+BATTLE_TYPE_BUG_CONTEST = 12
+function battleTypeAddr() => heap(HEAP_ID_BATTLE) + 0x4C
+function isTrainerBattle() => bit(BATTLE_TYPE_TRAINER,battleTypeAddr()) == 1
+function isDoubleBattle() => bit(BATTLE_TYPE_DOUBLES,battleTypeAddr()) == 1
 
 function totalTurns() => ptr(battleContextPtr(), [0x150],dword)
 function paydayCount() => ptr(battleContextPtr(), [0x14c],dword)
@@ -187,7 +201,25 @@ function prizeMoneyValue() => ptr(battleContextPtr(), [0x2168],dword)
 function battleMonAddr(i) => ptr(battleContextPtr(), [0x2d40 + (i * 0xc0)],acc_addr)
 function battleMonSpecies(i) => word(battleMonAddr(i) + 0x00)
 function battleMonLevel(i) => byte(battleMonAddr(i) + 0x34)
+function battleMonItem(i) => word(battleMonAddr(i) + 0x78)
 function battleMonGender(i) => low4(battleMonAddr(i) + 0x7e)
+
+function achGetItemFromPokemon(species_id, item_id) => inBattle() && 
+        
+        !isTrainerBattle() && 
+        battleMonSpecies(1) == species_id + 1 &&
+        
+        ( 
+            (trigger_when(battleCaught()) && battleMonItem(1) == item_id)
+            ||
+            (trigger_when(
+                battleMonItem(0) == item_id &&
+                prev(battleMonItem(0)) == 0
+            ))
+        )
+        
+
+
 
 function achTrainerDefeated(trainer_ids) => inBattle() && isTrainerBattle() && battleWon() && any_of(trainer_ids, t => 
             battleTrainer() == t
@@ -201,14 +233,14 @@ function achMagikarpRecord() => inGame() &&
             prev(var(VAR_MAGIKARP_SIZE_RECORD)) == 56150
             
 
-function achShinyLeafCrown() => unless(!inGame()) && 
+function achShinyLeafCrown() => never(!inGame()) && 
         isHeapActive(HEAP_ID_CERTIFICATES) &&
         dword(heap(HEAP_ID_CERTIFICATES) + 0x20) == HEAP_ID_CERTIFICATES && 
         dword(heap(HEAP_ID_CERTIFICATES) + 0x24) == 2 && 
         word(heap(HEAP_ID_CERTIFICATES) + 0x62) == 0x3c && 
         prev(word(heap(HEAP_ID_CERTIFICATES) + 0x62)) < 0x3c &&
         once(has_increased(flag(FLAG_SHINY_CROWN))) &&
-        unless(currMapID() != MAP_NEW_BARK_RIVAL_HOUSE_2F)
+        never(currMapID() != MAP_NEW_BARK_RIVAL_HOUSE_2F)
 
 
 function ach(ach, t) {
@@ -3293,6 +3325,14 @@ PKMN_GROUP_HEADBUTT = [
     PKMN_CHERUBI,
 ]
 
+PKMN_GROUP_HEADBUTT_SPECIFIC = [
+    PKMN_TAILLOW,
+    PKMN_SLAKOTH,
+    PKMN_STARLY,
+    PKMN_BURMY,
+    PKMN_CHERUBI,
+]
+
 PKMN_GROUP_SWARM = [
     PKMN_CHANSEY,
     PKMN_DITTO,
@@ -3561,10 +3601,10 @@ VAR_TEMP_x4000 = 0x4000
     VAR_UNK_40DA = 0x40DA
     VAR_UNK_40DB = 0x40DB
     VAR_UNK_40DC = 0x40DC
-    VAR_UNK_40DD = 0x40DD //RUINS_ALPH_PUZZLE_ONE
-    VAR_UNK_40DE = 0x40DE
-    VAR_UNK_40DF = 0x40DF
-    VAR_UNK_40E0 = 0x40E0
+    RUINS_ALPH_PUZZLE_ONE = 0x40DD
+    RUINS_ALPH_PUZZLE_TWO = 0x40DE
+    RUINS_ALPH_PUZZLE_THREE = 0x40DF
+    RUINS_ALPH_PUZZLE_FOUR = 0x40E0
     VAR_BOAT_DIRECTION = 0x40E1
     VAR_UNK_40E2 = 0x40E2
     VAR_SCENE_SAFARI_ZONE_ENTRANCE = 0x40E3
@@ -3592,12 +3632,12 @@ VAR_TEMP_x4000 = 0x4000
     VAR_SCENE_EMBEDDED_TOWER = 0x40F9
     VAR_UNK_40FA = 0x40FA
     VAR_SCENE_SINJOH_MYSTRI_ROOM = 0x40FB
-    VAR_UNK_40FC = 0x40FC
+    VAR_LANCE_CLAIR_DOUBLE_BATTLE = 0x40FC
     VAR_UNK_40FD = 0x40FD
     VAR_UNK_40FE = 0x40FE
     VAR_UNK_40FF = 0x40FF
     VAR_UNK_4100 = 0x4100
-    VAR_UNK_4101 = 0x4101
+    VAR_PLATE_COUNTER = 0x4101
     VAR_UNK_4102 = 0x4102
     VAR_UNK_4103 = 0x4103
     VAR_UNK_4104 = 0x4104
@@ -13294,7 +13334,7 @@ function achEffortRibbion() => inGame() &&
 
 function voltorbPtr() => dword(heap(HEAP_ID_VOLTORB) + 0x26c)
 
-function inVoltorbMinigame() => currMapID() == MAP_GOLDENROD_GAME_CORNER &&
+function inVoltorbMinigame() => __ornext(currMapID() == MAP_GOLDENROD_GAME_CORNER || currMapID() == MAP_CELADON_GAME_CORNER) &&
         isHeapActive(HEAP_ID_VOLTORB)
 
 ROUND_OUTCOME_NONE = 0 
@@ -13321,8 +13361,8 @@ function achHerbShop() => inGame() &&
         posY() >= 25
 
 function achClairLanceDoubleBattle() => inGame() &&
-        var(VAR_UNK_40FC) == 2 &&
-        prev(var(VAR_UNK_40FC)) == 1 &&
+        var(VAR_LANCE_CLAIR_DOUBLE_BATTLE) == 2 &&
+        prev(var(VAR_LANCE_CLAIR_DOUBLE_BATTLE)) == 1 &&
         currMapID() == MAP_DRAGONS_DEN
 
 function achDiamondDust() => inGame() &&
@@ -13330,11 +13370,10 @@ function achDiamondDust() => inGame() &&
         currWeather() == WEATHER_DIAMOND_DUST &&
         has_changed(currWeather())
 
-function sumAlphPuzzles() => var(VAR_UNK_40DD) / var(VAR_UNK_40DD) +
-        var(VAR_UNK_40DE) / var(VAR_UNK_40DE) +
-        var(VAR_UNK_40DF) / var(VAR_UNK_40DF) +
-        var(VAR_UNK_40E0) / var(VAR_UNK_40E0) +
-        //flag(FLAG_UNK_219) + 
+function sumAlphPuzzles() => var(RUINS_ALPH_PUZZLE_ONE) / var(RUINS_ALPH_PUZZLE_ONE) +
+        var(RUINS_ALPH_PUZZLE_TWO) / var(RUINS_ALPH_PUZZLE_TWO) +
+        var(RUINS_ALPH_PUZZLE_THREE) / var(RUINS_ALPH_PUZZLE_THREE) +
+        var(RUINS_ALPH_PUZZLE_FOUR) / var(RUINS_ALPH_PUZZLE_FOUR) +
         flag(FLAG_OPENED_ALPH_ESCAPE_ROPE_SECRET_ROOM) +
         flag(FLAG_OPENED_ALPH_FLASH_SECRET_ROOM) +
         flag(FLAG_OPENED_ALPH_WATER_STONE_SECRET_ROOM) +
@@ -13447,6 +13486,410 @@ function achBillGrandfatherPkmn() => unless(!inGame()) &&
         currMapID() == MAP_ROUTE_25_SEA_COTTAGE &&
         measured(var(VAR_BILL_SHOWN_PKMN_COUNTER) == 5, when=inGame()) &&
         prev(var(VAR_BILL_SHOWN_PKMN_COUNTER)) == 4
+
+function achPlates() => unless(!inGame()) &&
+        unless(save_ptr() != prev(save_ptr())) &&
+        unless(tbyte(REGION_PTR_ADDR) != prev(tbyte(REGION_PTR_ADDR))) &&
+        currMapID() == MAP_SS_AQUA_CAPTAIN_ROOM &&
+        measured(var(VAR_PLATE_COUNTER) == 16, when=inGame()) &&
+        prev(var(VAR_PLATE_COUNTER)) == 15
+
+function berrySlot(i) => word(s(0xc14 + (i * 2)))
+
+function achAllBerries() => unless(!inGame()) &&
+        unless(save_ptr() != prev(save_ptr())) &&
+        unless(tbyte(REGION_PTR_ADDR) != prev(tbyte(REGION_PTR_ADDR))) &&
+        measured(tally(43,
+                  once((berrySlot(0) >= 149) && berrySlot(0) < 209),
+                  once((berrySlot(1) >= 149) && berrySlot(1) < 209),
+                  once((berrySlot(2) >= 149) && berrySlot(2) < 209),
+                  once((berrySlot(3) >= 149) && berrySlot(3) < 209),
+                  once((berrySlot(4) >= 149) && berrySlot(4) < 209),
+                  once((berrySlot(5) >= 149) && berrySlot(5) < 209),
+                  once((berrySlot(6) >= 149) && berrySlot(6) < 209),
+                  once((berrySlot(7) >= 149) && berrySlot(7) < 209),
+                  once((berrySlot(8) >= 149) && berrySlot(8) < 209),
+                  once((berrySlot(9) >= 149) && berrySlot(9) < 209),
+                  once((berrySlot(10) >= 149) && berrySlot(10) < 209),
+                  once((berrySlot(11) >= 149) && berrySlot(11) < 209),
+                  once((berrySlot(12) >= 149) && berrySlot(12) < 209),
+                  once((berrySlot(13) >= 149) && berrySlot(13) < 209),
+                  once((berrySlot(14) >= 149) && berrySlot(14) < 209),
+                  once((berrySlot(15) >= 149) && berrySlot(15) < 209),
+                  once((berrySlot(16) >= 149) && berrySlot(16) < 209),
+                  once((berrySlot(17) >= 149) && berrySlot(17) < 209),
+                  once((berrySlot(18) >= 149) && berrySlot(18) < 209),
+                  once((berrySlot(19) >= 149) && berrySlot(19) < 209),
+                  once((berrySlot(20) >= 149) && berrySlot(20) < 209),
+                  once((berrySlot(21) >= 149) && berrySlot(21) < 209),
+                  once((berrySlot(22) >= 149) && berrySlot(22) < 209),
+                  once((berrySlot(23) >= 149) && berrySlot(23) < 209),
+                  once((berrySlot(24) >= 149) && berrySlot(24) < 209),
+                  once((berrySlot(25) >= 149) && berrySlot(25) < 209),
+                  once((berrySlot(26) >= 149) && berrySlot(26) < 209),
+                  once((berrySlot(27) >= 149) && berrySlot(27) < 209),
+                  once((berrySlot(28) >= 149) && berrySlot(28) < 209),
+                  once((berrySlot(29) >= 149) && berrySlot(29) < 209),
+                  once((berrySlot(30) >= 149) && berrySlot(30) < 209),
+                  once((berrySlot(31) >= 149) && berrySlot(31) < 209),
+                  once((berrySlot(32) >= 149) && berrySlot(32) < 209),
+                  once((berrySlot(33) >= 149) && berrySlot(33) < 209),
+                  once((berrySlot(34) >= 149) && berrySlot(34) < 209),
+                  once((berrySlot(35) >= 149) && berrySlot(35) < 209),
+                  once((berrySlot(36) >= 149) && berrySlot(36) < 209),
+                  once((berrySlot(37) >= 149) && berrySlot(37) < 209),
+                  once((berrySlot(38) >= 149) && berrySlot(38) < 209),
+                  once((berrySlot(39) >= 149) && berrySlot(39) < 209),
+                  once((berrySlot(40) >= 149) && berrySlot(40) < 209),
+                  once((berrySlot(41) >= 149) && berrySlot(41) < 209),
+                  once((berrySlot(42) >= 149) && berrySlot(42) < 209))
+              ) &&
+              tally(38,
+                  once((prev(berrySlot(0)) >= 149) && prev(berrySlot(0)) < 209),
+                  once((prev(berrySlot(1)) >= 149) && prev(berrySlot(1)) < 209),
+                  once((prev(berrySlot(2)) >= 149) && prev(berrySlot(2)) < 209),
+                  once((prev(berrySlot(3)) >= 149) && prev(berrySlot(3)) < 209),
+                  once((prev(berrySlot(4)) >= 149) && prev(berrySlot(4)) < 209),
+                  once((prev(berrySlot(5)) >= 149) && prev(berrySlot(5)) < 209),
+                  once((prev(berrySlot(6)) >= 149) && prev(berrySlot(6)) < 209),
+                  once((prev(berrySlot(7)) >= 149) && prev(berrySlot(7)) < 209),
+                  once((prev(berrySlot(8)) >= 149) && prev(berrySlot(8)) < 209),
+                  once((prev(berrySlot(9)) >= 149) && prev(berrySlot(9)) < 209),
+                  once((prev(berrySlot(10)) >= 149) && prev(berrySlot(10)) < 209),
+                  once((prev(berrySlot(11)) >= 149) && prev(berrySlot(11)) < 209),
+                  once((prev(berrySlot(12)) >= 149) && prev(berrySlot(12)) < 209),
+                  once((prev(berrySlot(13)) >= 149) && prev(berrySlot(13)) < 209),
+                  once((prev(berrySlot(14)) >= 149) && prev(berrySlot(14)) < 209),
+                  once((prev(berrySlot(15)) >= 149) && prev(berrySlot(15)) < 209),
+                  once((prev(berrySlot(16)) >= 149) && prev(berrySlot(16)) < 209),
+                  once((prev(berrySlot(17)) >= 149) && prev(berrySlot(17)) < 209),
+                  once((prev(berrySlot(18)) >= 149) && prev(berrySlot(18)) < 209),
+                  once((prev(berrySlot(19)) >= 149) && prev(berrySlot(19)) < 209),
+                  once((prev(berrySlot(20)) >= 149) && prev(berrySlot(20)) < 209),
+                  once((prev(berrySlot(21)) >= 149) && prev(berrySlot(21)) < 209),
+                  once((prev(berrySlot(22)) >= 149) && prev(berrySlot(22)) < 209),
+                  once((prev(berrySlot(23)) >= 149) && prev(berrySlot(23)) < 209),
+                  once((prev(berrySlot(24)) >= 149) && prev(berrySlot(24)) < 209),
+                  once((prev(berrySlot(25)) >= 149) && prev(berrySlot(25)) < 209),
+                  once((prev(berrySlot(26)) >= 149) && prev(berrySlot(26)) < 209),
+                  once((prev(berrySlot(27)) >= 149) && prev(berrySlot(27)) < 209),
+                  once((prev(berrySlot(28)) >= 149) && prev(berrySlot(28)) < 209),
+                  once((prev(berrySlot(29)) >= 149) && prev(berrySlot(29)) < 209),
+                  once((prev(berrySlot(30)) >= 149) && prev(berrySlot(30)) < 209),
+                  once((prev(berrySlot(31)) >= 149) && prev(berrySlot(31)) < 209),
+                  once((prev(berrySlot(32)) >= 149) && prev(berrySlot(32)) < 209),
+                  once((prev(berrySlot(33)) >= 149) && prev(berrySlot(33)) < 209),
+                  once((prev(berrySlot(34)) >= 149) && prev(berrySlot(34)) < 209),
+                  once((prev(berrySlot(35)) >= 149) && prev(berrySlot(35)) < 209),
+                  once((prev(berrySlot(36)) >= 149) && prev(berrySlot(36)) < 209),
+                  once((prev(berrySlot(37)) >= 149) && prev(berrySlot(37)) < 209),
+                  once((prev(berrySlot(38)) >= 149) && prev(berrySlot(38)) < 209),
+                  once((prev(berrySlot(39)) >= 149) && prev(berrySlot(39)) < 209),
+                  once((prev(berrySlot(40)) >= 149) && prev(berrySlot(40)) < 209),
+                  once((prev(berrySlot(41)) >= 149) && prev(berrySlot(41)) < 209),
+                  once((prev(berrySlot(42)) >= 149) && prev(berrySlot(42)) < 209)
+                ) &&
+              never(
+                tally(43,
+                  once((prev(berrySlot(0)) >= 149) && prev(berrySlot(0)) < 209),
+                  once((prev(berrySlot(1)) >= 149) && prev(berrySlot(1)) < 209),
+                  once((prev(berrySlot(2)) >= 149) && prev(berrySlot(2)) < 209),
+                  once((prev(berrySlot(3)) >= 149) && prev(berrySlot(3)) < 209),
+                  once((prev(berrySlot(4)) >= 149) && prev(berrySlot(4)) < 209),
+                  once((prev(berrySlot(5)) >= 149) && prev(berrySlot(5)) < 209),
+                  once((prev(berrySlot(6)) >= 149) && prev(berrySlot(6)) < 209),
+                  once((prev(berrySlot(7)) >= 149) && prev(berrySlot(7)) < 209),
+                  once((prev(berrySlot(8)) >= 149) && prev(berrySlot(8)) < 209),
+                  once((prev(berrySlot(9)) >= 149) && prev(berrySlot(9)) < 209),
+                  once((prev(berrySlot(10)) >= 149) && prev(berrySlot(10)) < 209),
+                  once((prev(berrySlot(11)) >= 149) && prev(berrySlot(11)) < 209),
+                  once((prev(berrySlot(12)) >= 149) && prev(berrySlot(12)) < 209),
+                  once((prev(berrySlot(13)) >= 149) && prev(berrySlot(13)) < 209),
+                  once((prev(berrySlot(14)) >= 149) && prev(berrySlot(14)) < 209),
+                  once((prev(berrySlot(15)) >= 149) && prev(berrySlot(15)) < 209),
+                  once((prev(berrySlot(16)) >= 149) && prev(berrySlot(16)) < 209),
+                  once((prev(berrySlot(17)) >= 149) && prev(berrySlot(17)) < 209),
+                  once((prev(berrySlot(18)) >= 149) && prev(berrySlot(18)) < 209),
+                  once((prev(berrySlot(19)) >= 149) && prev(berrySlot(19)) < 209),
+                  once((prev(berrySlot(20)) >= 149) && prev(berrySlot(20)) < 209),
+                  once((prev(berrySlot(21)) >= 149) && prev(berrySlot(21)) < 209),
+                  once((prev(berrySlot(22)) >= 149) && prev(berrySlot(22)) < 209),
+                  once((prev(berrySlot(23)) >= 149) && prev(berrySlot(23)) < 209),
+                  once((prev(berrySlot(24)) >= 149) && prev(berrySlot(24)) < 209),
+                  once((prev(berrySlot(25)) >= 149) && prev(berrySlot(25)) < 209),
+                  once((prev(berrySlot(26)) >= 149) && prev(berrySlot(26)) < 209),
+                  once((prev(berrySlot(27)) >= 149) && prev(berrySlot(27)) < 209),
+                  once((prev(berrySlot(28)) >= 149) && prev(berrySlot(28)) < 209),
+                  once((prev(berrySlot(29)) >= 149) && prev(berrySlot(29)) < 209),
+                  once((prev(berrySlot(30)) >= 149) && prev(berrySlot(30)) < 209),
+                  once((prev(berrySlot(31)) >= 149) && prev(berrySlot(31)) < 209),
+                  once((prev(berrySlot(32)) >= 149) && prev(berrySlot(32)) < 209),
+                  once((prev(berrySlot(33)) >= 149) && prev(berrySlot(33)) < 209),
+                  once((prev(berrySlot(34)) >= 149) && prev(berrySlot(34)) < 209),
+                  once((prev(berrySlot(35)) >= 149) && prev(berrySlot(35)) < 209),
+                  once((prev(berrySlot(36)) >= 149) && prev(berrySlot(36)) < 209),
+                  once((prev(berrySlot(37)) >= 149) && prev(berrySlot(37)) < 209),
+                  once((prev(berrySlot(38)) >= 149) && prev(berrySlot(38)) < 209),
+                  once((prev(berrySlot(39)) >= 149) && prev(berrySlot(39)) < 209),
+                  once((prev(berrySlot(40)) >= 149) && prev(berrySlot(40)) < 209),
+                  once((prev(berrySlot(41)) >= 149) && prev(berrySlot(41)) < 209),
+                  once((prev(berrySlot(42)) >= 149) && prev(berrySlot(42)) < 209)
+                )
+            ) &&
+              (
+                (never(save_ptr() != prev(save_ptr())) &&
+                never((prev(berrySlot(0)) >= 149) && prev(berrySlot(0)) <= 212 && berrySlot(0) == 0) &&
+                never((prev(berrySlot(1)) >= 149) && prev(berrySlot(1)) <= 212 && berrySlot(1) == 0) &&
+                never((prev(berrySlot(2)) >= 149) && prev(berrySlot(2)) <= 212 && berrySlot(2) == 0) &&
+                never((prev(berrySlot(3)) >= 149) && prev(berrySlot(3)) <= 212 && berrySlot(3) == 0) &&
+                never((prev(berrySlot(4)) >= 149) && prev(berrySlot(4)) <= 212 && berrySlot(4) == 0) &&
+                never((prev(berrySlot(5)) >= 149) && prev(berrySlot(5)) <= 212 && berrySlot(5) == 0) &&
+                never((prev(berrySlot(6)) >= 149) && prev(berrySlot(6)) <= 212 && berrySlot(6) == 0) &&
+                never((prev(berrySlot(7)) >= 149) && prev(berrySlot(7)) <= 212 && berrySlot(7) == 0) &&
+                never((prev(berrySlot(8)) >= 149) && prev(berrySlot(8)) <= 212 && berrySlot(8) == 0) &&
+                never((prev(berrySlot(9)) >= 149) && prev(berrySlot(9)) <= 212 && berrySlot(9) == 0) &&
+                never((prev(berrySlot(10)) >= 149) && prev(berrySlot(10)) <= 212 && berrySlot(10) == 0) &&
+                never((prev(berrySlot(11)) >= 149) && prev(berrySlot(11)) <= 212 && berrySlot(11) == 0) &&
+                never((prev(berrySlot(12)) >= 149) && prev(berrySlot(12)) <= 212 && berrySlot(12) == 0) &&
+                never((prev(berrySlot(13)) >= 149) && prev(berrySlot(13)) <= 212 && berrySlot(13) == 0) &&
+                never((prev(berrySlot(14)) >= 149) && prev(berrySlot(14)) <= 212 && berrySlot(14) == 0) &&
+                never((prev(berrySlot(15)) >= 149) && prev(berrySlot(15)) <= 212 && berrySlot(15) == 0) &&
+                never((prev(berrySlot(16)) >= 149) && prev(berrySlot(16)) <= 212 && berrySlot(16) == 0) &&
+                never((prev(berrySlot(17)) >= 149) && prev(berrySlot(17)) <= 212 && berrySlot(17) == 0) &&
+                never((prev(berrySlot(18)) >= 149) && prev(berrySlot(18)) <= 212 && berrySlot(18) == 0) &&
+                never((prev(berrySlot(19)) >= 149) && prev(berrySlot(19)) <= 212 && berrySlot(19) == 0) &&
+                never((prev(berrySlot(20)) >= 149) && prev(berrySlot(20)) <= 212 && berrySlot(20) == 0) &&
+                never((prev(berrySlot(21)) >= 149) && prev(berrySlot(21)) <= 212 && berrySlot(21) == 0) &&
+                never((prev(berrySlot(22)) >= 149) && prev(berrySlot(22)) <= 212 && berrySlot(22) == 0) &&
+                never((prev(berrySlot(23)) >= 149) && prev(berrySlot(23)) <= 212 && berrySlot(23) == 0) &&
+                never((prev(berrySlot(24)) >= 149) && prev(berrySlot(24)) <= 212 && berrySlot(24) == 0) &&
+                never((prev(berrySlot(25)) >= 149) && prev(berrySlot(25)) <= 212 && berrySlot(25) == 0) &&
+                never((prev(berrySlot(26)) >= 149) && prev(berrySlot(26)) <= 212 && berrySlot(26) == 0) &&
+                never((prev(berrySlot(27)) >= 149) && prev(berrySlot(27)) <= 212 && berrySlot(27) == 0) &&
+                never((prev(berrySlot(28)) >= 149) && prev(berrySlot(28)) <= 212 && berrySlot(28) == 0) &&
+                never((prev(berrySlot(29)) >= 149) && prev(berrySlot(29)) <= 212 && berrySlot(29) == 0) &&
+                never((prev(berrySlot(30)) >= 149) && prev(berrySlot(30)) <= 212 && berrySlot(30) == 0) &&
+                never((prev(berrySlot(31)) >= 149) && prev(berrySlot(31)) <= 212 && berrySlot(31) == 0) &&
+                never((prev(berrySlot(32)) >= 149) && prev(berrySlot(32)) <= 212 && berrySlot(32) == 0) &&
+                never((prev(berrySlot(33)) >= 149) && prev(berrySlot(33)) <= 212 && berrySlot(33) == 0) &&
+                never((prev(berrySlot(34)) >= 149) && prev(berrySlot(34)) <= 212 && berrySlot(34) == 0) &&
+                never((prev(berrySlot(35)) >= 149) && prev(berrySlot(35)) <= 212 && berrySlot(35) == 0) &&
+                never((prev(berrySlot(36)) >= 149) && prev(berrySlot(36)) <= 212 && berrySlot(36) == 0) &&
+                never((prev(berrySlot(37)) >= 149) && prev(berrySlot(37)) <= 212 && berrySlot(37) == 0) &&
+                never((prev(berrySlot(38)) >= 149) && prev(berrySlot(38)) <= 212 && berrySlot(38) == 0) &&
+                never((prev(berrySlot(39)) >= 149) && prev(berrySlot(39)) <= 212 && berrySlot(39) == 0) &&
+                never((prev(berrySlot(40)) >= 149) && prev(berrySlot(40)) <= 212 && berrySlot(40) == 0) &&
+                never((prev(berrySlot(41)) >= 149) && prev(berrySlot(41)) <= 212 && berrySlot(41) == 0) &&
+                never((prev(berrySlot(42)) >= 149) && prev(berrySlot(42)) <= 212 && berrySlot(42) == 0)
+                ) ||
+               (tbyte(REGION_PTR_ADDR) == prev(tbyte(REGION_PTR_ADDR)))
+            )
+
+function achAllFashion() => unless(!inGame()) &&
+        unless(save_ptr() != prev(save_ptr())) &&
+        unless(tbyte(REGION_PTR_ADDR) != prev(tbyte(REGION_PTR_ADDR))) && 
+        measured(tally(110, once(low4(s(0x3F74)) > 0),
+                  once(high4(s(0x3f74)) > 0), once(low4(s(0x3F75)) > 0),
+                  once(high4(s(0x3F75)) > 0), once(low4(s(0x3F76)) > 0),
+once(high4(s(0x3F76)) > 0), once(low4(s(0x3F77)) > 0),
+once(high4(s(0x3F77)) > 0), once(low4(s(0x3F78)) > 0),
+once(high4(s(0x3F78)) > 0), once(low4(s(0x3F79)) > 0),
+once(high4(s(0x3F79)) > 0), once(low4(s(0x3F7A)) > 0),
+once(high4(s(0x3F7A)) > 0), once(low4(s(0x3F7B)) > 0),
+once(high4(s(0x3F7B)) > 0), once(low4(s(0x3F7C)) > 0),
+once(high4(s(0x3F7C)) > 0), once(low4(s(0x3F7D)) > 0),
+once(high4(s(0x3F7D)) > 0), once(low4(s(0x3F7E)) > 0),
+once(high4(s(0x3F7E)) > 0), once(low4(s(0x3F7F)) > 0),
+once(high4(s(0x3F7F)) > 0), once(low4(s(0x3F80)) > 0),
+once(high4(s(0x3F80)) > 0), once(low4(s(0x3F81)) > 0),
+once(high4(s(0x3F81)) > 0), once(low4(s(0x3F82)) > 0),
+once(high4(s(0x3F82)) > 0), once(low4(s(0x3F83)) > 0),
+once(high4(s(0x3F83)) > 0), once(low4(s(0x3F84)) > 0),
+once(high4(s(0x3F84)) > 0), once(low4(s(0x3F85)) > 0),
+once(high4(s(0x3F85)) > 0), once(low4(s(0x3F86)) > 0),
+once(high4(s(0x3F86)) > 0), once(low4(s(0x3F87)) > 0),
+once(high4(s(0x3F87)) > 0), once(low4(s(0x3F88)) > 0),
+once(high4(s(0x3F88)) > 0), once(low4(s(0x3F89)) > 0),
+once(high4(s(0x3F89)) > 0), once(low4(s(0x3F8A)) > 0),
+once(high4(s(0x3F8A)) > 0), once(low4(s(0x3F8B)) > 0),
+once(high4(s(0x3F8B)) > 0), once(low4(s(0x3F8C)) > 0),
+once(high4(s(0x3F8C)) > 0), once(low4(s(0x3F8D)) > 0),
+once(high4(s(0x3F8D)) > 0), once(low4(s(0x3F8E)) > 0),
+once(high4(s(0x3F8E)) > 0), once(low4(s(0x3F8F)) > 0),
+once(high4(s(0x3F8F)) > 0), once(low4(s(0x3F90)) > 0),
+once(high4(s(0x3F90)) > 0), once(low4(s(0x3F91)) > 0),
+once(high4(s(0x3F91)) > 0), once(low4(s(0x3F92)) > 0),
+once(bit0(s(0x3F94)) == 1), once(bit1(s(0x3F94)) == 1),
+once(bit2(s(0x3F94)) == 1), once(bit3(s(0x3F94)) == 1),
+once(bit4(s(0x3F94)) == 1), once(bit5(s(0x3F94)) == 1),
+once(bit6(s(0x3F94)) == 1), once(bit7(s(0x3F94)) == 1),
+once(bit0(s(0x3F95)) == 1), once(bit1(s(0x3F95)) == 1),
+once(bit2(s(0x3F95)) == 1), once(bit3(s(0x3F95)) == 1),
+once(bit4(s(0x3F95)) == 1), once(bit5(s(0x3F95)) == 1),
+once(bit6(s(0x3F95)) == 1), once(bit7(s(0x3F95)) == 1),
+once(bit0(s(0x3F96)) == 1), once(bit1(s(0x3F96)) == 1),
+once(bit2(s(0x3F96)) == 1), once(bit3(s(0x3F96)) == 1),
+once(bit4(s(0x3F96)) == 1), once(bit5(s(0x3F96)) == 1),
+once(bit6(s(0x3F96)) == 1), once(bit7(s(0x3F96)) == 1),
+once(bit0(s(0x3F97)) == 1), once(bit1(s(0x3F97)) == 1),
+once(bit2(s(0x3F97)) == 1), once(bit3(s(0x3F97)) == 1),
+once(bit4(s(0x3F97)) == 1), once(bit5(s(0x3F97)) == 1),
+once(bit6(s(0x3F97)) == 1), once(bit7(s(0x3F97)) == 1),
+once(bit0(s(0x3F98)) == 1), once(bit1(s(0x3F98)) == 1),
+once(bit2(s(0x3F98)) == 1), once(byte(s(0x3F9C)) < 18),
+once(byte(s(0x3F9D)) < 18), once(byte(s(0x3F9E)) < 18),
+once(byte(s(0x3F9F)) < 18), once(byte(s(0x3FA0)) < 18),
+once(byte(s(0x3FA1)) < 18), once(byte(s(0x3FA2)) < 18),
+once(byte(s(0x3FA3)) < 18), once(byte(s(0x3FA4)) < 18),
+once(byte(s(0x3FA5)) < 18), once(byte(s(0x3FA6)) < 18),
+once(byte(s(0x3FA7)) < 18), once(byte(s(0x3FA8)) < 18),
+once(byte(s(0x3FA9)) < 18))
+) && tally(109, once(low4(s(0x3F74)) > 0),
+                  once(high4(s(0x3f74)) > 0), once(low4(s(0x3F75)) > 0),
+                  once(high4(s(0x3F75)) > 0), once(low4(s(0x3F76)) > 0),
+once(high4(s(0x3F76)) > 0), once(low4(s(0x3F77)) > 0),
+once(high4(s(0x3F77)) > 0), once(low4(s(0x3F78)) > 0),
+once(high4(s(0x3F78)) > 0), once(low4(s(0x3F79)) > 0),
+once(high4(s(0x3F79)) > 0), once(low4(s(0x3F7A)) > 0),
+once(high4(s(0x3F7A)) > 0), once(low4(s(0x3F7B)) > 0),
+once(high4(s(0x3F7B)) > 0), once(low4(s(0x3F7C)) > 0),
+once(high4(s(0x3F7C)) > 0), once(low4(s(0x3F7D)) > 0),
+once(high4(s(0x3F7D)) > 0), once(low4(s(0x3F7E)) > 0),
+once(high4(s(0x3F7E)) > 0), once(low4(s(0x3F7F)) > 0),
+once(high4(s(0x3F7F)) > 0), once(low4(s(0x3F80)) > 0),
+once(high4(s(0x3F80)) > 0), once(low4(s(0x3F81)) > 0),
+once(high4(s(0x3F81)) > 0), once(low4(s(0x3F82)) > 0),
+once(high4(s(0x3F82)) > 0), once(low4(s(0x3F83)) > 0),
+once(high4(s(0x3F83)) > 0), once(low4(s(0x3F84)) > 0),
+once(high4(s(0x3F84)) > 0), once(low4(s(0x3F85)) > 0),
+once(high4(s(0x3F85)) > 0), once(low4(s(0x3F86)) > 0),
+once(high4(s(0x3F86)) > 0), once(low4(s(0x3F87)) > 0),
+once(high4(s(0x3F87)) > 0), once(low4(s(0x3F88)) > 0),
+once(high4(s(0x3F88)) > 0), once(low4(s(0x3F89)) > 0),
+once(high4(s(0x3F89)) > 0), once(low4(s(0x3F8A)) > 0),
+once(high4(s(0x3F8A)) > 0), once(low4(s(0x3F8B)) > 0),
+once(high4(s(0x3F8B)) > 0), once(low4(s(0x3F8C)) > 0),
+once(high4(s(0x3F8C)) > 0), once(low4(s(0x3F8D)) > 0),
+once(high4(s(0x3F8D)) > 0), once(low4(s(0x3F8E)) > 0),
+once(high4(s(0x3F8E)) > 0), once(low4(s(0x3F8F)) > 0),
+once(high4(s(0x3F8F)) > 0), once(low4(s(0x3F90)) > 0),
+once(high4(s(0x3F90)) > 0), once(low4(s(0x3F91)) > 0),
+once(high4(s(0x3F91)) > 0), once(low4(s(0x3F92)) > 0),
+once(bit0(s(0x3F94)) == 1), once(bit1(s(0x3F94)) == 1),
+once(bit2(s(0x3F94)) == 1), once(bit3(s(0x3F94)) == 1),
+once(bit4(s(0x3F94)) == 1), once(bit5(s(0x3F94)) == 1),
+once(bit6(s(0x3F94)) == 1), once(bit7(s(0x3F94)) == 1),
+once(bit0(s(0x3F95)) == 1), once(bit1(s(0x3F95)) == 1),
+once(bit2(s(0x3F95)) == 1), once(bit3(s(0x3F95)) == 1),
+once(bit4(s(0x3F95)) == 1), once(bit5(s(0x3F95)) == 1),
+once(bit6(s(0x3F95)) == 1), once(bit7(s(0x3F95)) == 1),
+once(bit0(s(0x3F96)) == 1), once(bit1(s(0x3F96)) == 1),
+once(bit2(s(0x3F96)) == 1), once(bit3(s(0x3F96)) == 1),
+once(bit4(s(0x3F96)) == 1), once(bit5(s(0x3F96)) == 1),
+once(bit6(s(0x3F96)) == 1), once(bit7(s(0x3F96)) == 1),
+once(bit0(s(0x3F97)) == 1), once(bit1(s(0x3F97)) == 1),
+once(bit2(s(0x3F97)) == 1), once(bit3(s(0x3F97)) == 1),
+once(bit4(s(0x3F97)) == 1), once(bit5(s(0x3F97)) == 1),
+once(bit6(s(0x3F97)) == 1), once(bit7(s(0x3F97)) == 1),
+once(bit0(s(0x3F98)) == 1), once(bit1(s(0x3F98)) == 1),
+once(bit2(s(0x3F98)) == 1), once(byte(s(0x3F9C)) < 18),
+once(byte(s(0x3F9D)) < 18), once(byte(s(0x3F9E)) < 18),
+once(byte(s(0x3F9F)) < 18), once(byte(s(0x3FA0)) < 18),
+once(byte(s(0x3FA1)) < 18), once(byte(s(0x3FA2)) < 18),
+once(byte(s(0x3FA3)) < 18), once(byte(s(0x3FA4)) < 18),
+once(byte(s(0x3FA5)) < 18), once(byte(s(0x3FA6)) < 18),
+once(byte(s(0x3FA7)) < 18), once(byte(s(0x3FA8)) < 18),
+once(byte(s(0x3FA9)) < 18)
+              ) &&
+              never(tally(110, once(low4(s(0x3F74)) > 0),
+                  once(high4(s(0x3f74)) > 0), once(low4(s(0x3F75)) > 0),
+                  once(high4(s(0x3F75)) > 0), once(low4(s(0x3F76)) > 0),
+once(high4(s(0x3F76)) > 0), once(low4(s(0x3F77)) > 0),
+once(high4(s(0x3F77)) > 0), once(low4(s(0x3F78)) > 0),
+once(high4(s(0x3F78)) > 0), once(low4(s(0x3F79)) > 0),
+once(high4(s(0x3F79)) > 0), once(low4(s(0x3F7A)) > 0),
+once(high4(s(0x3F7A)) > 0), once(low4(s(0x3F7B)) > 0),
+once(high4(s(0x3F7B)) > 0), once(low4(s(0x3F7C)) > 0),
+once(high4(s(0x3F7C)) > 0), once(low4(s(0x3F7D)) > 0),
+once(high4(s(0x3F7D)) > 0), once(low4(s(0x3F7E)) > 0),
+once(high4(s(0x3F7E)) > 0), once(low4(s(0x3F7F)) > 0),
+once(high4(s(0x3F7F)) > 0), once(low4(s(0x3F80)) > 0),
+once(high4(s(0x3F80)) > 0), once(low4(s(0x3F81)) > 0),
+once(high4(s(0x3F81)) > 0), once(low4(s(0x3F82)) > 0),
+once(high4(s(0x3F82)) > 0), once(low4(s(0x3F83)) > 0),
+once(high4(s(0x3F83)) > 0), once(low4(s(0x3F84)) > 0),
+once(high4(s(0x3F84)) > 0), once(low4(s(0x3F85)) > 0),
+once(high4(s(0x3F85)) > 0), once(low4(s(0x3F86)) > 0),
+once(high4(s(0x3F86)) > 0), once(low4(s(0x3F87)) > 0),
+once(high4(s(0x3F87)) > 0), once(low4(s(0x3F88)) > 0),
+once(high4(s(0x3F88)) > 0), once(low4(s(0x3F89)) > 0),
+once(high4(s(0x3F89)) > 0), once(low4(s(0x3F8A)) > 0),
+once(high4(s(0x3F8A)) > 0), once(low4(s(0x3F8B)) > 0),
+once(high4(s(0x3F8B)) > 0), once(low4(s(0x3F8C)) > 0),
+once(high4(s(0x3F8C)) > 0), once(low4(s(0x3F8D)) > 0),
+once(high4(s(0x3F8D)) > 0), once(low4(s(0x3F8E)) > 0),
+once(high4(s(0x3F8E)) > 0), once(low4(s(0x3F8F)) > 0),
+once(high4(s(0x3F8F)) > 0), once(low4(s(0x3F90)) > 0),
+once(high4(s(0x3F90)) > 0), once(low4(s(0x3F91)) > 0),
+once(high4(s(0x3F91)) > 0), once(low4(s(0x3F92)) > 0),
+once(bit0(s(0x3F94)) == 1), once(bit1(s(0x3F94)) == 1),
+once(bit2(s(0x3F94)) == 1), once(bit3(s(0x3F94)) == 1),
+once(bit4(s(0x3F94)) == 1), once(bit5(s(0x3F94)) == 1),
+once(bit6(s(0x3F94)) == 1), once(bit7(s(0x3F94)) == 1),
+once(bit0(s(0x3F95)) == 1), once(bit1(s(0x3F95)) == 1),
+once(bit2(s(0x3F95)) == 1), once(bit3(s(0x3F95)) == 1),
+once(bit4(s(0x3F95)) == 1), once(bit5(s(0x3F95)) == 1),
+once(bit6(s(0x3F95)) == 1), once(bit7(s(0x3F95)) == 1),
+once(bit0(s(0x3F96)) == 1), once(bit1(s(0x3F96)) == 1),
+once(bit2(s(0x3F96)) == 1), once(bit3(s(0x3F96)) == 1),
+once(bit4(s(0x3F96)) == 1), once(bit5(s(0x3F96)) == 1),
+once(bit6(s(0x3F96)) == 1), once(bit7(s(0x3F96)) == 1),
+once(bit0(s(0x3F97)) == 1), once(bit1(s(0x3F97)) == 1),
+once(bit2(s(0x3F97)) == 1), once(bit3(s(0x3F97)) == 1),
+once(bit4(s(0x3F97)) == 1), once(bit5(s(0x3F97)) == 1),
+once(bit6(s(0x3F97)) == 1), once(bit7(s(0x3F97)) == 1),
+once(bit0(s(0x3F98)) == 1), once(bit1(s(0x3F98)) == 1),
+once(bit2(s(0x3F98)) == 1), once(byte(s(0x3F9C)) < 18),
+once(byte(s(0x3F9D)) < 18), once(byte(s(0x3F9E)) < 18),
+once(byte(s(0x3F9F)) < 18), once(byte(s(0x3FA0)) < 18),
+once(byte(s(0x3FA1)) < 18), once(byte(s(0x3FA2)) < 18),
+once(byte(s(0x3FA3)) < 18), once(byte(s(0x3FA4)) < 18),
+once(byte(s(0x3FA5)) < 18), once(byte(s(0x3FA6)) < 18),
+once(byte(s(0x3FA7)) < 18), once(byte(s(0x3FA8)) < 18),
+once(byte(s(0x3FA9)) < 18))
+              ) /*&& never(byte(global_pointer_word() + 0x1CF888) == 0)*/
+
+
+function momGiftQueueItem(i) => word(s(0xc0d4 + (i * 4)))
+function momGiftQueueAmt(i) => word(s(0xc0d6 + (i * 4)))
+
+function momNormalGiftFlag(f) => bit(f%8, s(0xc0ec) + f/8)
+
+function achMomFocusSash() => inGame() &&
+            has_changed(momGiftQueueItem(0)) &&
+            prev(momGiftQueueItem(0)) == 0x113 && //TODO: item id -> const
+            momNormalGiftFlag(8) == 1
+
+
+function inSafariZone() => currMapID() >= MAP_SAFARI_ZONE_01 && currMapID() <= MAP_SAFARI_ZONE_14
+
+function achSafariCatch(species_id) => inBattle() && 
+        !isTrainerBattle() &&
+        battleCaught() && 
+        inSafariZone() && 
+        battleMonSpecies(1) == species_id + 1
+
+function achPorygonPurchase() => inGame() &&
+        currMapID() == MAP_CELADON_PRIZE_CORNER &&
+        isScriptActive() &&
+        activeScriptNumber() == 5 &&
+        specialVar(8) == 2 &&
+        has_decreased(coins()) &&
+        prev(coins()) >= 9999
+
+
+
+
 
 GenderLookup = {
     0: "♂",
@@ -13628,12 +14071,11 @@ achs_reg = [
 ["Arcade Star Dahlia Met and Defeated","Obtain the Silver Print in the Battle Arcade",25,achSilverPrint(4) && inBattleArcade()],
 ["Dahlia's Ultimate Team","Obtain the Gold Print in the Battle Arcade",50,achGoldPrint(4) && inBattleArcade()],
 ["Frontier Legend","Reach a streak of 100 wins in the Battle Tower and obtain a Trainer Card star",50,achBattleTowerStreakAmt(100)],
-["Local Connoisseur","Catch all 221 Pokémon in the Johto Pokedex without events or external trades",50,achPokemonCaughtGroup(PKMN_GROUP_JOHTO, 221)],
-["Gotta Catch 'Em All - SoulSilver Edition","Catch all 371 Pokémon in the National Pokedex without events or external trades",50,achPokemonCaughtGroup(PKMN_GROUP_NATIONAL, 371)],
-["Hard-Headed","Catch all Pokémon that can be found by Headbutting trees",5,achPokemonCaughtGroup(PKMN_GROUP_HEADBUTT, length(PKMN_GROUP_HEADBUTT))],
+["Local Connoisseur","Catch all 221 Pokémon in the Johto Pokedex, not including events or external trades",50,achPokemonCaughtGroup(PKMN_GROUP_JOHTO, 221)],
+["Gotta Catch 'Em All - SoulSilver Edition","Catch all 371 Pokémon in the National Pokedex, not including events or external trades",50,achPokemonCaughtGroup(PKMN_GROUP_NATIONAL, 371)],
+["Hard-Headed","Catch all Pokémon that can be found by Headbutting specific trees",5,achPokemonCaughtGroup(PKMN_GROUP_HEADBUTT_SPECIFIC, length(PKMN_GROUP_HEADBUTT_SPECIFIC))],
 ["The Sound of Wednesdays","Catch all Pokémon that can be found via Hoenn Sound",5,achPokemonCaughtGroup(PKMN_GROUP_HOENN_SOUND, length(PKMN_GROUP_HOENN_SOUND))],
 ["Thursday's Funky Beats","Catch all Pokémon that can be found via Sinnoh Sound",5,achPokemonCaughtGroup(PKMN_GROUP_SINNOH_SOUND, length(PKMN_GROUP_SINNOH_SOUND))],
-// Catch all Pokémon that can be found in the Safari Zone
 ["Invasive Species","Catch all Pokémon that can be found in Swarms",5,achPokemonCaughtGroup(PKMN_GROUP_SWARM, length(PKMN_GROUP_SWARM))],
 ["All With My Trusty Net","Catch all Pokémon that can be found during the Bug Catching Contest",5,achPokemonCaughtGroup(PKMN_GROUP_BUGCONTEST, length(PKMN_GROUP_BUGCONTEST))],
 ["The Silvered Soul","Catch Lugia in the Whirl Islands",10,achFlagAnyMap(FLAG_CAUGHT_LUGIA)],
@@ -13648,8 +14090,7 @@ achs_reg = [
 ["Gentle Voyager","Catch Latios",5,achPokemonCaught(PKMN_LATIOS)],
 ["The Avatar of Land","Catch Groudon in the Hidden Tower",5,achFlagAnyMap(FLAG_CAUGHT_GROUDON)],
 ["The Sweet Smell of Babies","Obtain every Incense",5,achFlagGroup(GROUP_FLAG_INCENSE)],
-// Obtain every Plate
-    //VAR_UNK_4101?
+["Tesselation","Obtain every Plate",5,achPlates()],
 ["Blowhard","Obtain every colored Flute",5,achFlagGroup(GROUP_FLAG_FLUTE)],
 ["Hometown Collector","Find every item and hidden item in New Bark Town, Route 29, Cherrygrove City, and Route 30",3,achItemsFound([
 MAP_NEW_BARK, // New Bark Town / T20
@@ -13888,9 +14329,9 @@ MAP_CERULEAN_CAVE_B1F, // Cerulean Cave / D03R0103 [ev406]
 ["Six Magikarps and Still No Dragons","Defeat every rematchable trainer's final team who are present on Thursday",5,achTrainersDefeatedGroup(TRAINER_GROUP_THUR)],
 ["Gotta Get Down on Friday","Defeat every rematchable trainer's final team who are present on Friday",5,achTrainersDefeatedGroup(TRAINER_GROUP_FRI)],
 ["Saturday Night Live","Defeat every rematchable trainer's final team who are present on Saturday",5,achTrainersDefeatedGroup(TRAINER_GROUP_SAT)],
-// Obtain at least one of every accessory and backdrop for the Fashion Case
+["Ready for All Occasions","Obtain at least one of every accessory and backdrop for the Fashion Case",25,achAllFashion()],
 ["Endless Customization","Collect all 77 obtainable Seals in the Seal Case at once",25,achSeals()],
-// Collect all 43 available regular Berries in the Berry Pocket at once
+["Each and Every Flavour At Your Fingertips","Collect all 43 available regular Berries in the Berry Pocket at once",25,achAllBerries()],
 ["Day Off","Take a photo with the Day-Care Man on Route 34 on Wednesday or Thursday",3,achPhotoTaken(MAP_ROUTE_34, SPRITE_GSOLDMAN1)],
 ["Meeting the Elder in his Favored Terrain","Take a photo with the Dragon Master in the Dragon's Den Shrine on Monday or Thursday",3,achPhotoTaken(MAP_DRAGONS_DEN_SHRINE, SPRITE_CHOUROU)],
 ["Meet the Leaders: Grocery Edition","Take a photo with Falkner in the Celadon Department Store on Wednesday",3,achPhotoTaken(MAP_CELADON_DEPARTMENT_STORE_4F, SPRITE_GSLEADER1)],
@@ -13911,7 +14352,7 @@ MAP_CERULEAN_CAVE_B1F, // Cerulean Cave / D03R0103 [ev406]
 ["Meet the Leaders: Probably Looking for MissingNo","Take a photo with Blue on Cinnabar Island on Friday",3,achPhotoTaken(MAP_CINNABAR_ISLAND, SPRITE_GSLEADER16)],
 ["Selfie with the Legendary Professor","Take a photo with Professor Oak in Professor Oak's Lab",3,achPhotoTaken(MAP_PALLET_TOWN_OAKS_LAB, SPRITE_OOKIDO)],
 ["Undercover","Take a photo in Goldenrod Tunnel while dressed in a Team Rocket uniform",3,achPhotoTaken(MAP_GOLDENROD_TUNNEL_B1F, 0)],
-// Obtain a Silk Scarf, Choice Scarf, Muscle Band, and Focus Sash as gifts from your Mother
+["Mom Knows Best","Obtain a Focus Sash as a gift from your Mother",5,achMomFocusSash()],
 ["And That's Number One!","Win the Bug Catching Contest at the National Park",3,achWonBugContest()],
 ["Only the Best","Catch a Pokémon in the Bug Catching Contest worth at least 350 points",5,achBugContestScore(350)],
 ["Arrested Development","Receive an Everstone from Professor Elm after showing him the hatched Togepi",2,achFlagAnyMap(FLAG_GOT_EVERSTONE_FROM_ELM)],
@@ -13934,7 +14375,7 @@ MAP_CERULEAN_CAVE_B1F, // Cerulean Cave / D03R0103 [ev406]
 ["Don't Mind If I Do!","Trade any Pokémon for a Steelix to Jasmine in her gym",3,achFlagAnyMap(FLAG_TRADE_JASMINE_STEELIX)],
 ["Look What I Found!","Show Lyra or Ethan a Pokemon who has found a Shiny Leaf",2,achFlagInMap(FLAG_SHOWED_FRIEND_A_SHINY_LEAF,MAP_NEW_BARK_RIVAL_HOUSE_2F)],
 ["Explored the World, On Foot","Have a Leaf Crown made by Lyra or Ethan after collecting 5 Shiny Leaves on a Pokémon",5,achShinyLeafCrown()],
-// Obtain a Stick from a wild Farfetch'd
+["Taking a Leek","Catch a Farfetch'd holding a Stick, or steal it",5,achGetItemFromPokemon(PKMN_FARFETCHD, 259)],
 ["Ancient Enigma","Solve all eight puzzles of the Ruins of Alph",3,achRuinsAlphPuzzles()],
 ["Archeologist Extraordinaire","Complete every page of the Unown Report",5,achUnownReport()],
 ["Midbattle Snacks","Receive three berries in exchange for a colored shard from the Juggler in Violet City",2,achBerryTrader()],
@@ -13974,16 +14415,17 @@ MAP_CERULEAN_CAVE_B1F, // Cerulean Cave / D03R0103 [ev406]
 ["Taking Down a Pair of Legends","Defeat Clair and Lance in a double battle at the Dragon's Den",5,achClairLanceDoubleBattle()],
 ["Right Place, Right Time","Obtain every item from the Week Siblings",5,achFlagGroup(GROUP_FLAG_WEEKSIBLINGS)],
 ["Rematch at the Summit","Defeat your rival at the Indigo Plateau on Monday or Wednesday",5,achTrainerDefeated([TRAINER_RIVAL_SILVER_19,TRAINER_RIVAL_SILVER_20,TRAINER_RIVAL_SILVER_21])],
-
-
 ["No Hail Tonight","Witness Diamond Dust on Mt. Silver on a special day",5,achDiamondDust()],
 ["Making Bank","Have your Pay Day earnings doubled with an Amulet Coin or Luck Incense",5,achPayDayAmulet()],
-// Land a Pokémon while fishing with a lead Pokémon whose ability is Sticky Hold or Suction Cups
 ["Brotlov","Complete level 5 in Voltorb Flip",10,achVoltorbLevelBeat(5)],
 
 
 //TODO: get approved via revision
-["Smashing Discovery","Obtain HM06 Rock Smash from a man on Route 36",2,achHM06()]
+["Smashing Discovery","Obtain HM06 Rock Smash from a man on Route 36",2,achHM06()],
+["_porygon","Purchase a Porygon from the Celadon Prize Corner",5,achPorygonPurchase()],
+["_bagon","Catch a Bagon in the Safari Zone",10,achSafariCatch(PKMN_BAGON)],
+["_gible","Catch a Gible in the Safari Zone",10,achSafariCatch(PKMN_GIBLE)],
+["_riolu","Catch a Riolu in the Safari Zone",5,achSafariCatch(PKMN_RIOLU)],
 ]
 
 achs_prog = [
