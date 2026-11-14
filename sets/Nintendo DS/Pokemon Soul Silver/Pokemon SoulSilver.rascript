@@ -4,7 +4,6 @@
 // Badge Info
 // drop shadow: 0.0 2.5 -45.00 0.40 #000000
 // outline: 1 0 #ffffff or #D0D8E0 ?
-//
 
 function has_increased(addr) => addr > prev(addr)
 function has_decreased(addr) => addr < prev(addr)
@@ -40,8 +39,10 @@ function ptr(base, offsets, accessor = dword)
 }
 
 REGION_PTR_ADDR = 0x00000ba8
+REGION_PTR_ADDR_2 = 0x00000bac // used to get around the code note length limit
 function r(offset) => ptr(REGION_PTR_ADDR,[0x00,offset],acc_addr)
 function s(offset) => ptr(REGION_PTR_ADDR,[0x00,0xC09C8,offset],acc_addr)
+function s2(offset) => ptr(REGION_PTR_ADDR_2,[0x00,0xC09C8,offset],acc_addr)
 function save_ptr() => ptr(REGION_PTR_ADDR,[0x00,0xC09C8],dword)
 
 function money() => dword(s(0x88))
@@ -110,7 +111,7 @@ OV_POKEWALKER = 112
 OV_UNOWN_REPORT = 113
 
 function var(f) => word(s(0xdf4 + ((f - 0x4000) * 2)))
-function flag(f) => bit(f%8, s(0x10d4) + f/8)
+function flag(f) => bit(f%8, s2(0x10d4) + f/8)
 function trainer_flag(f) => flag(f + 0x550)//bit(f%8, s(0x10d4) + TRAINER_FLAG_BASE + f/8)
 
 function currMapID() => dword(s(0x1244))
@@ -795,7 +796,6 @@ AreaLookup = {
     538: "Unused",
     539: "Pokémon League",
 }
-//*=in a Mystery Zone
 
 PkmnLookup = {
 1: "Bulbasaur",
@@ -13867,7 +13867,7 @@ function momNormalGiftFlag(f) => bit(f%8, s(0xc0ec) + f/8)
 
 function achMomFocusSash() => inGame() &&
             has_changed(momGiftQueueItem(0)) &&
-            prev(momGiftQueueItem(0)) == 0x113 && //TODO: item id -> const
+            prev(momGiftQueueItem(0)) == 0x113 &&
             momNormalGiftFlag(8) == 1
 
 
@@ -13886,10 +13886,6 @@ function achPorygonPurchase() => inGame() &&
         specialVar(8) == 2 &&
         has_decreased(coins()) &&
         prev(coins()) >= 9999
-
-
-
-
 
 GenderLookup = {
     0: "♂",
@@ -14015,7 +14011,7 @@ rich_presence_conditional_display(inGame() && isActiveOverlay(0) && currentOverl
     rp_battle_trainer_s
 )
 
-rich_presence_conditional_display(inGame() /*&& currentOverlayID(0) == OV_FIELD*/,"🗺️{0} 🎖️{1} 🔴{3} 👁️{4} 🕒{2}",
+rich_presence_conditional_display(inGame(),"🗺️{0} 🎖️{1} 🔴{3} 👁️{4} 🕒{2}",
     rp_field_map,
     rp_num_badges,
     rp_playtime,
@@ -14023,37 +14019,13 @@ rich_presence_conditional_display(inGame() /*&& currentOverlayID(0) == OV_FIELD*
     rp_pkmn_seen_total
 )
 
-/*
-rich_presence_conditional_display(inGame() && currentOverlayID(0) == OV_VSRECORDER,"Viewing VS Recorder")
-rich_presence_conditional_display(inGame() && currentOverlayID(0) == OV_PALPAD,"Viewing Pal Pad")
-rich_presence_conditional_display(inGame() && currentOverlayID(0) == OV_BAG,"Viewing Bag")
-rich_presence_conditional_display(inGame() && currentOverlayID(0) == OV_BERRYPOTS,"Viewing Berry Pots")
-rich_presence_conditional_display(inGame() && currentOverlayID(0) == OV_APRICORNBOX,"Viewing Apricorn Box")
-rich_presence_conditional_display(inGame() && currentOverlayID(0) == OV_UNOWN_REPORT,"Viewing UNOWN Report")
-rich_presence_conditional_display(inGame() && currentOverlayID(0) == OV_POKEDEX,"Viewing Pokedex")
-rich_presence_conditional_display(inGame() && currentOverlayID(0) == OV_TRAINERCARD,"Viewing Trainer Card")
-rich_presence_conditional_display(inGame() && currentOverlayID(0) == OV_OPTIONS,"Viewing Options")
-rich_presence_conditional_display(inGame() && currentOverlayID(0) == OV_PC_BOX,"Viewing PC Box")
-rich_presence_conditional_display(inGame() && currentOverlayID(0) == OV_CAPSULES,"Viewing Capsules")
-rich_presence_conditional_display(inGame() && currentOverlayID(0) == OV_MAILBOX,"Viewing Mailbox")
-rich_presence_conditional_display(inGame() && currentOverlayID(0) == OV_PHOTOALBUM,"Viewing Photo Album")
-rich_presence_conditional_display(inGame() && currentOverlayID(0) == OV_POKEGEAR,"Viewing Pokegear")
-rich_presence_conditional_display(inGame() && currentOverlayID(0) == OV_MAP,"Viewing Map")
-rich_presence_conditional_display(inGame() && currentOverlayID(0) == OV_SAFARICUSTOMIZER,"Viewing Safari Customizer")
-rich_presence_conditional_display(inGame() && currentOverlayID(0) == OV_POKEWALKER,"Viewing Pokewalker")
-rich_presence_conditional_display(inGame() && currentOverlayID(0) == OV_CHOOSE_STARTER,"Choosing Starter")
-
-rich_presence_conditional_display(inGame(),"[unknown overlay] {0}",
-    rich_presence_value("Overlay", currentOverlayID(0))
-)*/
-
 rich_presence_display("Loading...")
 
 achs_reg = [
 ["Rock Smash","Defeat Brock and earn the Boulder Badge",5,achKantoBadgeObtained(BADGE_BOULDER)],
 ["Fishing Trip","Defeat Misty and earn the Cascade Badge",5,achKantoBadgeObtained(BADGE_CASCADE)],
 ["The Badge of a Lieutenant","Defeat Lt. Surge and earn the Thunder Badge",5,achKantoBadgeObtained(BADGE_THUNDER)],
-["As Beautiful As Ever","Defeat Erika and earn the Rainbow Badge",5,achKantoBadgeObtained(BADGE_RAINBOW)],
+["As Beautiful as Ever","Defeat Erika and earn the Rainbow Badge",5,achKantoBadgeObtained(BADGE_RAINBOW)],
 ["The New Generation","Defeat Janine and earn the Soul Badge",5,achKantoBadgeObtained(BADGE_SOUL)],
 ["Besting the Genius","Defeat Sabrina and earn the Marsh Badge",5,achKantoBadgeObtained(BADGE_MARSH)],
 ["The Fire Specialist at the Core of the Island","Defeat Blaine and earn the Volcano Badge",5,achKantoBadgeObtained(BADGE_VOLCANO)],
@@ -14348,14 +14320,12 @@ MAP_CERULEAN_CAVE_B1F, // Cerulean Cave / D03R0103 [ev406]
 ["Meet the Leaders: Underground Fun","Take a photo with Brock in Diglett's Cave",3,achPhotoTaken(MAP_DIGLETT_CAVE, SPRITE_GSLEADER14)],
 ["Meet the Leaders: On a Trip","Take a photo with Sabrina at Olivine Harbor on Monday",3,achPhotoTaken(MAP_SS_AQUA_OLIVINE_PORT_EXTERIOR, SPRITE_GSLEADER10)],
 ["Meet the Leaders: Around a Cup","Take a photo with Jasmine at Olivine Cafe",3,achPhotoTaken(MAP_OLIVINE_CAFE, SPRITE_GSLEADER6)],
-["Meet the Leaders: Waterfall Training","Take a photo with Chuck on Route 47 on Sunday",3,achPhotoTaken(MAP_ROUTE_47, SPRITE_GSLEADER5)],
 ["Meet the Leaders: Probably Looking for MissingNo","Take a photo with Blue on Cinnabar Island on Friday",3,achPhotoTaken(MAP_CINNABAR_ISLAND, SPRITE_GSLEADER16)],
 ["Selfie with the Legendary Professor","Take a photo with Professor Oak in Professor Oak's Lab",3,achPhotoTaken(MAP_PALLET_TOWN_OAKS_LAB, SPRITE_OOKIDO)],
 ["Undercover","Take a photo in Goldenrod Tunnel while dressed in a Team Rocket uniform",3,achPhotoTaken(MAP_GOLDENROD_TUNNEL_B1F, 0)],
 ["Mom Knows Best","Obtain a Focus Sash as a gift from your Mother",5,achMomFocusSash()],
 ["And That's Number One!","Win the Bug Catching Contest at the National Park",3,achWonBugContest()],
 ["Only the Best","Catch a Pokémon in the Bug Catching Contest worth at least 350 points",5,achBugContestScore(350)],
-["Arrested Development","Receive an Everstone from Professor Elm after showing him the hatched Togepi",2,achFlagAnyMap(FLAG_GOT_EVERSTONE_FROM_ELM)],
 ["Here's to a Job Well Done","Receive an HP Up from Gate Keeper Randy near Goldenrod City after delivering Kenya the Spearow to Route 31",3,achLoanSpearowReward()],
 ["Young and Still Able to Become Anything","Receive an Eevee from Bill at his house in Goldenrod City",3,achFlagAnyMap(FLAG_GOT_EEVEE_FROM_BILL)],
 ["The Hardest Rock Around","Receive Shuckie the Shuckle as a gift from a trainer in Cianwood City",2,achFlagInMap(FLAG_GOT_LOAN_SHUCKLE, MAP_CIANWOOD_KIRKS_HOUSE)],
@@ -14387,11 +14357,10 @@ MAP_CERULEAN_CAVE_B1F, // Cerulean Cave / D03R0103 [ev406]
 ["What a Catch!","Obtain an Ether after showing the Fishing Guru a large Magikarp at the Lake of Rage",3,achMagikarpRecord()],
 ["After School Makeover","Have Daisy groom one of your Pokémon at the Rival's house in Pallet Town between 3:00-3:59PM",2,achFlagInMap(FLAG_DAISY_MASSAGE, MAP_PALLET_TOWN_BLUES_HOUSE_1F)],
 ["Winner Winner Chicken Dinner","Win a prize at the Lottery Corner in the Goldenrod Radio Tower",2,achLotteryPrize()],
-["Friends with the Radio crew","Obtain Buena's Pokegear number after earning 30 points from her radio show",10,achBuenaPassword()],
-["You Fight Like a Dairy Farmer","Learn all the trendy phrases from the old man on Route 16",5,achTrendyWords()],
+["Friends with the Radio Crew","Obtain Buena's Pokegear number after earning 30 points from her radio show",10,achBuenaPassword()],
+["You Fight like a Dairy Farmer","Learn all the trendy phrases from the old man on Route 16",5,achTrendyWords()],
 ["Perfect Match","Win a prize by matching three of the same Pokémon on a Scratch-Off Card at the Battle Frontier",3,achFrontierCardScratch()],
 ["Knocking on the Fourth Wall","Obtain GB Sounds from a Game Freak's Sound Designer in Celadon City",2,achGetKeyItem(0x1f6)],
-    // TODO: add map id check
 ["Fortune Strikes Again and Again","Obtain Lucky Punch from showing a lady on Route 14 a Chansey",3,achFlagAnyMap(FLAG_GOT_LUCKY_PUNCH_FROM_ROUTE_14_WOMAN)],
 ["Bothering the Local Wild Life Just Trying to Sleep","Wake up the Snorlax on Route 11",3,achWakeSnorlax()],
 ["No Pain No Gain","Obtain an Effort Ribbon from a woman in Blackthorn City",3,achEffortRibbion()],
@@ -14408,7 +14377,7 @@ MAP_CERULEAN_CAVE_B1F, // Cerulean Cave / D03R0103 [ev406]
 ["Goodie Detector","Obtain the Dowsing MCHN in Ecruteak City",2,achFlagAnyMap(FLAG_GOT_DOWSING_MACHINE)],
 ["The Wise Pokémon Learns from the Mistakes of Others","Obtain an Exp. Share from Mr. Pokémon in exchange for the Red Scale",2,achFlagInMap(FLAG_EXCHANGED_RED_SCALE, MAP_ROUTE_30_MR_POKEMON_HOUSE)],
 ["Speed on Wheels","Obtain a Bicycle in Goldenrod City",5,achFlagAnyMap(FLAG_GOT_BIKE)],
-["Right On Tracks","Obtain a Pass to board the Magnet Train in Saffron City",2,achFlagDisableInMap(FLAG_HIDE_SAFFRON_CITY_COPYCAT_HOUSE_CLEFAIRY_DOLL, MAP_SAFFRON_COPYCAT_HOUSE_2F)],
+["Right on Tracks","Obtain a Pass to board the Magnet Train in Saffron City",2,achFlagDisableInMap(FLAG_HIDE_SAFFRON_CITY_COPYCAT_HOUSE_CLEFAIRY_DOLL, MAP_SAFFRON_COPYCAT_HOUSE_2F)],
 ["Ocean Sampler","Obtain all 3 fishing rods",3,achRods()],
 ["A Rare Sight","Encounter a Lapras in Union Cave on Friday",2,achUnionLapras()],
 ["Blessings from the Moon","Witness the Clefairy dance at Mt. Moon on Monday night or Tuesday morning",2,achVarChange(VAR_SCENE_CLEFAIRY_DANCE,0,1)],
@@ -14418,14 +14387,11 @@ MAP_CERULEAN_CAVE_B1F, // Cerulean Cave / D03R0103 [ev406]
 ["No Hail Tonight","Witness Diamond Dust on Mt. Silver on a special day",5,achDiamondDust()],
 ["Making Bank","Have your Pay Day earnings doubled with an Amulet Coin or Luck Incense",5,achPayDayAmulet()],
 ["Brotlov","Complete level 5 in Voltorb Flip",10,achVoltorbLevelBeat(5)],
-
-
-//TODO: get approved via revision
 ["Smashing Discovery","Obtain HM06 Rock Smash from a man on Route 36",2,achHM06()],
-["_porygon","Purchase a Porygon from the Celadon Prize Corner",5,achPorygonPurchase()],
-["_bagon","Catch a Bagon in the Safari Zone",10,achSafariCatch(PKMN_BAGON)],
-["_gible","Catch a Gible in the Safari Zone",10,achSafariCatch(PKMN_GIBLE)],
-["_riolu","Catch a Riolu in the Safari Zone",5,achSafariCatch(PKMN_RIOLU)],
+["Shocking Prize","Purchase a Porygon from the Celadon Prize Corner",5,achPorygonPurchase()],
+["Safari Hunt in the Swamp","Catch a Bagon in the Safari Zone",10,achSafariCatch(PKMN_BAGON)],
+["Safari Hunt on Rocky Beach","Catch a Gible in the Safari Zone",10,achSafariCatch(PKMN_GIBLE)],
+["Safari Hunt in the Meadow","Catch a Riolu in the Safari Zone",5,achSafariCatch(PKMN_RIOLU)],
 ]
 
 achs_prog = [
@@ -14445,6 +14411,8 @@ achs_win = [
 
 achs_missable = [
     ["Mysterious Passerby","Defeat the red-haired boy in Cherrygrove City",3,achTrainerDefeated([TRAINER_PASSERBY_BOY,TRAINER_PASSERBY_BOY_2,TRAINER_PASSERBY_BOY_3])],
+    ["Arrested Development","Receive an Everstone from Professor Elm after showing him the hatched Togepi",2,achFlagAnyMap(FLAG_GOT_EVERSTONE_FROM_ELM)],
+    ["Meet the Leaders: Waterfall Training","Take a photo with Chuck on Route 47 on Sunday",3,achPhotoTaken(MAP_ROUTE_47, SPRITE_GSLEADER5)],
 ]
 
 for a in achs_reg ach(a,"")
@@ -14453,7 +14421,7 @@ for a in achs_win ach(a,"win_condition")
 for a in achs_missable ach(a,"missable")
 
 leaderboard(
-    title = "Bug Contest",
+    title = "Bug Catching Contest",
     description = "Highest Point Rating",
     start  = bugContestDone(),
     cancel = always_false(),
@@ -14463,5 +14431,15 @@ leaderboard(
     lower_is_better=false
 )
 
-//TODO: Magikarp largest size
-//TODO: Most Pokémon captured in one Safari Hunt?
+leaderboard(
+    title = "Magikarp Contest",
+    description = "Largest Magikarp",
+    start = inGame() && 
+            currMapID() == MAP_LAKE_OF_RAGE_FISHING_GURU_HOUSE &&
+            has_increased(var(VAR_MAGIKARP_SIZE_RECORD)),
+    cancel = always_false(),
+    submit = always_true(),
+    value  = measured(var(VAR_MAGIKARP_SIZE_RECORD)),
+    format = "VALUE",
+    lower_is_better=false
+)
