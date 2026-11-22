@@ -1206,7 +1206,7 @@ achievement(
     title = "Literally Unethical",
     points = 5,
     description = "Accept a large bribe on the Premium Ship",
-    trigger = inGame() && isPlus() && sceneIs(VER_PAID, SCENE_PREMIUM_HUB) && has_increased(puzzleSolved(79)) && cheatProtection(),
+    trigger = inGame() && isPlus() && !sceneIs(VER_PAID, SCENE_TITLE) && has_increased(puzzleSolved(79)) && cheatProtection(),
     set=premium_set
 )
 
